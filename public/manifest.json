@@ -1,0 +1,29 @@
+{
+  "name": "NOT HUMANS Command Center",
+  "short_name": "NOT HUMANS",
+  "description": "Progressive Web Application for NOT HUMANS Clash of Clans Clan Active Members and Leadership",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#ef4444",
+  "orientation": "portrait-primary",
+  "categories": ["utilities", "games"],
+  "icons": [
+    {
+      "src": "https://api-assets.clashofclans.com/badges/512/HdJ2Uoq78hEwblk6vU0Nt74HmQ0PGMeL-SaTp2KWphc.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://api-assets.clashofclans.com/badges/200/HdJ2Uoq78hEwblk6vU0Nt74HmQ0PGMeL-SaTp2KWphc.png",
+      "sizes": "200x200",
+      "type": "image/png"
+    },
+    {
+      "src": "https://api-assets.clashofclans.com/badges/70/HdJ2Uoq78hEwblk6vU0Nt74HmQ0PGMeL-SaTp2KWphc.png",
+      "sizes": "70x70",
+      "type": "image/png"
+    }
+  ]
+}

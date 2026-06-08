@@ -1,0 +1,115 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function getMemberData() {
+      return get(/databases/$(database)/documents/members/$(request.auth.uid)).data;
+    }
+
+    function isMemberActive() {
+      return isSignedIn() && (
+        (request.auth.token != null && 'email' in request.auth.token && (request.auth.token.email == 'waizmonazzum270@gmail.com' || request.auth.token.email == 'Waizmonazzum270@gmail.com')) ||
+        (exists(/databases/$(database)/documents/members/$(request.auth.uid)) && getMemberData().status == 'Active')
+      );
+    }
+
+    function isLeaderOrCo() {
+      return isSignedIn() && (
+        (request.auth.token != null && 'email' in request.auth.token && (request.auth.token.email == 'waizmonazzum270@gmail.com' || request.auth.token.email == 'Waizmonazzum270@gmail.com')) ||
+        (isMemberActive() && (getMemberData().role == 'Leader' || getMemberData().role == 'Co-Leader'))
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // 1. Members rules
+    match /members/{memberId} {
+      allow read: if true;
+      allow create, update, delete: if isSignedIn() && (request.auth.uid == memberId || isLeaderOrCo());
+    }
+
+    // 2. Chats rules
+    match /chats/{chatId} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+
+    // 3. Announcements
+    match /announcements/{id} {
+      allow read: if true;
+      allow write: if isLeaderOrCo();
+    }
+
+    // 4. CWL Plans
+    match /cwl_plans/{id} {
+      allow read: if isMemberActive();
+      allow write: if isLeaderOrCo();
+    }
+
+    // 5. Giveaways
+    match /giveaways/{id} {
+      allow read: if isMemberActive();
+      allow create, update: if isLeaderOrCo();
+      allow delete: if isLeaderOrCo();
+      
+      // Allow participant registration
+      match /participants/{userId} {
+        allow read, write: if isMemberActive();
+      }
+    }
+
+    // 6. Strategies
+    match /strategies/{id} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+
+    // 7. History
+    match /history/{id} {
+      allow read: if true;
+      allow write: if isLeaderOrCo();
+    }
+
+    // 8. Test connection rules
+    match /test/{id} {
+      allow read, write: if isSignedIn();
+    }
+
+    // 9. Chats settings rules
+    match /chats_settings/{id} {
+      allow read: if isMemberActive();
+      allow write: if isLeaderOrCo();
+    }
+
+    // 10. Bases directories rules
+    match /bases/{id} {
+      allow read: if isMemberActive();
+      allow create: if isMemberActive() && (
+        (request.resource.data.vaultType == 'not_humans' && isLeaderOrCo()) ||
+        (request.resource.data.vaultType == 'public' && isMemberActive())
+      );
+      allow update: if isMemberActive() && (
+        request.auth.uid == resource.data.authorUid ||
+        isLeaderOrCo()
+      );
+      allow delete: if isMemberActive() && (
+        request.auth.uid == resource.data.authorUid ||
+        isLeaderOrCo()
+      );
+    }
+
+    // 11. Custom Town Hall category background image rules
+    match /th_images/{thLevel} {
+      allow read: if true;
+      allow write: if isLeaderOrCo();
+    }
+  }
+}

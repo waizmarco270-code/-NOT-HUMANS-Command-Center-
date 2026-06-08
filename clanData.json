@@ -1,0 +1,1298 @@
+{
+  "tag": "#2JVQ8PUUG",
+  "name": "NOT HUMANS",
+  "type": "open",
+  "description": "🔰 Serious War Clan — Legends only 🔰\n🔰 CWL spots earned after skill check 🔰\n🔰 Max Clan Games, Events & Donations \n🔰 Elder earned through war, games & activity",
+  "location": {
+    "id": 32000113,
+    "name": "India",
+    "isCountry": true,
+    "countryCode": "IN"
+  },
+  "isFamilyFriendly": false,
+  "badgeUrls": {
+    "small": "https://api-assets.clashofclans.com/badges/70/HdJ2Uoq78hEwblk6vU0Nt74HmQ0PGMeL-SaTp2KWphc.png",
+    "large": "https://api-assets.clashofclans.com/badges/512/HdJ2Uoq78hEwblk6vU0Nt74HmQ0PGMeL-SaTp2KWphc.png",
+    "medium": "https://api-assets.clashofclans.com/badges/200/HdJ2Uoq78hEwblk6vU0Nt74HmQ0PGMeL-SaTp2KWphc.png"
+  },
+  "clanLevel": 7,
+  "clanPoints": 52100,
+  "clanBuilderBasePoints": 28845,
+  "clanCapitalPoints": 1574,
+  "capitalLeague": {
+    "id": 85000007,
+    "name": "Gold League III"
+  },
+  "requiredTrophies": 0,
+  "warFrequency": "always",
+  "warWinStreak": 7,
+  "warWins": 21,
+  "warTies": 11,
+  "warLosses": 2,
+  "isWarLogPublic": true,
+  "warLeague": {
+    "id": 48000008,
+    "name": "Gold League II"
+  },
+  "members": 50,
+  "memberList": [
+    {
+      "tag": "#LLPPPJ8JC",
+      "name": "Raikou",
+      "role": "admin",
+      "townHallLevel": 16,
+      "expLevel": 217,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leagues/72/e--YMyIexEQQhE4imLoJcwhYn6Uy8KqlgyY3_kFV6t4.png"
+        }
+      },
+      "leagueTier": {
+        "id": 105000027,
+        "name": "Titan League 27",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/1AhObOl55grQIWnGmn1J9qMWq5pmRA3aBObfYkQEjko.png",
+          "large": "https://api-assets.clashofclans.com/leaguetiers/326/1AhObOl55grQIWnGmn1J9qMWq5pmRA3aBObfYkQEjko.png"
+        }
+      },
+      "trophies": 494,
+      "builderBaseTrophies": 3956,
+      "clanRank": 1,
+      "previousClanRank": 0,
+      "donations": 472,
+      "donationsReceived": 0
+    },
+    {
+      "tag": "#9PV2J802R",
+      "name": "naveen",
+      "role": "admin",
+      "townHallLevel": 18,
+      "expLevel": 259,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leagues/72/e--YMyIexEQQhE4imLoJcwhYn6Uy8KqlgyY3_kFV6t4.png"
+        }
+      },
+      "leagueTier": {
+        "id": 105000027,
+        "name": "Titan League 27",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/1AhObOl55grQIWnGmn1J9qMWq5pmRA3aBObfYkQEjko.png"
+        }
+      },
+      "trophies": 120,
+      "builderBaseTrophies": 4189,
+      "clanRank": 2,
+      "previousClanRank": 1,
+      "donations": 321,
+      "donationsReceived": 9
+    },
+    {
+      "tag": "#PV9GPQPUC",
+      "name": "⚡Nadozaid⚡",
+      "role": "coLeader",
+      "townHallLevel": 15,
+      "expLevel": 192,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leagues/72/e--YMyIexEQQhE4imLoJcwhYn6Uy8KqlgyY3_kFV6t4.png"
+        }
+      },
+      "leagueTier": {
+        "id": 105000025,
+        "name": "Titan League 25",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/JLqVXdNkAGjD_yqMRDgu9KK-hDrulNPjsKU4EugHqX8.png"
+        }
+      },
+      "trophies": 462,
+      "builderBaseTrophies": 2772,
+      "clanRank": 3,
+      "previousClanRank": 0,
+      "donations": 47,
+      "donationsReceived": 0
+    },
+    {
+      "tag": "#QULGLL0R",
+      "name": "Shanti_mj",
+      "role": "coLeader",
+      "townHallLevel": 15,
+      "expLevel": 221,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leagues/72/e--YMyIexEQQhE4imLoJcwhYn6Uy8KqlgyY3_kFV6t4.png"
+        }
+      },
+      "leagueTier": {
+        "id": 105000024,
+        "name": "P.E.K.K.A League 24",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/vxV7LI0votsz0_n-8lW-Lag96D5HwKsEgEk_7247zC4.png"
+        }
+      },
+      "trophies": 393,
+      "builderBaseTrophies": 2589,
+      "clanRank": 4,
+      "previousClanRank": 2,
+      "donations": 3642,
+      "donationsReceived": 33
+    },
+    {
+      "tag": "#2V8QPVVQ2",
+      "name": "ALEXIS",
+      "role": "admin",
+      "townHallLevel": 15,
+      "expLevel": 207,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000024,
+        "name": "P.E.K.K.A League 24",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/vxV7LI0votsz0_n-8lW-Lag96D5HwKsEgEk_7247zC4.png"
+        }
+      },
+      "trophies": 256,
+      "builderBaseTrophies": 3275,
+      "clanRank": 5,
+      "previousClanRank": 3,
+      "donations": 253,
+      "donationsReceived": 82
+    },
+    {
+      "tag": "#Q8CGJP00G",
+      "name": "RêapÊr'",
+      "role": "coLeader",
+      "townHallLevel": 15,
+      "expLevel": 195,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000023,
+        "name": "P.E.K.K.A League 23",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/0eDMQmsiZ0gs8xzViGfVETnYjwzgELTKwYhH3izevT4.png"
+        }
+      },
+      "trophies": 485,
+      "builderBaseTrophies": 4960,
+      "clanRank": 6,
+      "previousClanRank": 4,
+      "donations": 1248,
+      "donationsReceived": 158
+    },
+    {
+      "tag": "#LR9GLYLP2",
+      "name": "Minhaj",
+      "role": "admin",
+      "townHallLevel": 15,
+      "expLevel": 121,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000021,
+        "name": "Golem League 21",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/WkqDvnK0CXI-Nc0TNTKG_fSuzRYoLRC54HFOdMCxVTI.png"
+        }
+      },
+      "trophies": 450,
+      "builderBaseTrophies": 2304,
+      "clanRank": 7,
+      "previousClanRank": 5,
+      "donations": 2742,
+      "donationsReceived": 1802
+    },
+    {
+      "tag": "#QRLYLCYJ2",
+      "name": "real devil",
+      "role": "member",
+      "townHallLevel": 16,
+      "expLevel": 78,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000021,
+        "name": "Golem League 21",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/WkqDvnK0CXI-Nc0TNTKG_fSuzRYoLRC54HFOdMCxVTI.png"
+        }
+      },
+      "trophies": 0,
+      "builderBaseTrophies": 1426,
+      "clanRank": 8,
+      "previousClanRank": 6,
+      "donations": 0,
+      "donationsReceived": 66
+    },
+    {
+      "tag": "#89VRGQV8C",
+      "name": "Kratos☆",
+      "role": "admin",
+      "townHallLevel": 15,
+      "expLevel": 187,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000019,
+        "name": "Golem League 19",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/yS8XBv_a_SNtCpcofsWMFaojRNwO504Py7HyDCBCjYU.png"
+        }
+      },
+      "trophies": 446,
+      "builderBaseTrophies": 2225,
+      "clanRank": 9,
+      "previousClanRank": 7,
+      "donations": 659,
+      "donationsReceived": 455
+    },
+    {
+      "tag": "#QU0YVGVYQ",
+      "name": "Devil Monster S",
+      "role": "admin",
+      "townHallLevel": 14,
+      "expLevel": 154,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000018,
+        "name": "Witch League 18",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/GeLamlTvRYNnZp5lEW64pyaORN30rCdrxTjU7oJoTN8.png"
+        }
+      },
+      "trophies": 380,
+      "builderBaseTrophies": 3065,
+      "clanRank": 10,
+      "previousClanRank": 8,
+      "donations": 347,
+      "donationsReceived": 767
+    },
+    {
+      "tag": "#YQ2RL9LLC",
+      "name": "toby",
+      "role": "admin",
+      "townHallLevel": 14,
+      "expLevel": 155,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000018,
+        "name": "Witch League 18",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/GeLamlTvRYNnZp5lEW64pyaORN30rCdrxTjU7oJoTN8.png"
+        }
+      },
+      "trophies": 249,
+      "builderBaseTrophies": 2638,
+      "clanRank": 11,
+      "previousClanRank": 11,
+      "donations": 656,
+      "donationsReceived": 477
+    },
+    {
+      "tag": "#G2VRU920L",
+      "name": "GunDa(x) johnny",
+      "role": "admin",
+      "townHallLevel": 15,
+      "expLevel": 121,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000018,
+        "name": "Witch League 18",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/GeLamlTvRYNnZp5lEW64pyaORN30rCdrxTjU7oJoTN8.png"
+        }
+      },
+      "trophies": 144,
+      "builderBaseTrophies": 1141,
+      "clanRank": 12,
+      "previousClanRank": 10,
+      "donations": 183,
+      "donationsReceived": 47
+    },
+    {
+      "tag": "#992VQUJ9C",
+      "name": "ᴠᴇɴɢᴇᴀɴᴄᴇ",
+      "role": "coLeader",
+      "townHallLevel": 15,
+      "expLevel": 171,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000018,
+        "name": "Witch League 18",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/GeLamlTvRYNnZp5lEW64pyaORN30rCdrxTjU7oJoTN8.png"
+        }
+      },
+      "trophies": 141,
+      "builderBaseTrophies": 2731,
+      "clanRank": 13,
+      "previousClanRank": 9,
+      "donations": 2222,
+      "donationsReceived": 1495
+    },
+    {
+      "tag": "#8UP2VGL2R",
+      "name": "leo",
+      "role": "admin",
+      "townHallLevel": 15,
+      "expLevel": 113,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000017,
+        "name": "Witch League 17",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/3mEMvpajLceJ3EKu7u_JIh_cOEsT7wyh701zum9hqCY.png"
+        }
+      },
+      "trophies": 342,
+      "builderBaseTrophies": 2018,
+      "clanRank": 14,
+      "previousClanRank": 12,
+      "donations": 2664,
+      "donationsReceived": 4852
+    },
+    {
+      "tag": "#PPRJQLPLC",
+      "name": "BROCK",
+      "role": "member",
+      "townHallLevel": 14,
+      "expLevel": 159,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000017,
+        "name": "Witch League 17",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/3mEMvpajLceJ3EKu7u_JIh_cOEsT7wyh701zum9hqCY.png"
+        }
+      },
+      "trophies": 285,
+      "builderBaseTrophies": 3139,
+      "clanRank": 15,
+      "previousClanRank": 0,
+      "donations": 210,
+      "donationsReceived": 0
+    },
+    {
+      "tag": "#LJRY0JRCL",
+      "name": "⚡⚡SHABAAN RD⚡⚡",
+      "role": "member",
+      "townHallLevel": 14,
+      "expLevel": 161,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000016,
+        "name": "Witch League 16",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/a3zg3PSqri2WrWD8tGzKs0hJ5OrND1Rx1SJ45f5O0gE.png"
+        }
+      },
+      "trophies": 354,
+      "builderBaseTrophies": 2457,
+      "clanRank": 16,
+      "previousClanRank": 0,
+      "donations": 0,
+      "donationsReceived": 0
+    },
+    {
+      "tag": "#GGCLRVRPJ",
+      "name": "ciaron",
+      "role": "admin",
+      "townHallLevel": 14,
+      "expLevel": 140,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000016,
+        "name": "Witch League 16",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/a3zg3PSqri2WrWD8tGzKs0hJ5OrND1Rx1SJ45f5O0gE.png"
+        }
+      },
+      "trophies": 0,
+      "builderBaseTrophies": 2884,
+      "clanRank": 17,
+      "previousClanRank": 14,
+      "donations": 387,
+      "donationsReceived": 2436
+    },
+    {
+      "tag": "#LJGPPU29G",
+      "name": "sudip Ronado",
+      "role": "member",
+      "townHallLevel": 15,
+      "expLevel": 171,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000014,
+        "name": "Valkyrie League 14",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/7AbbZbiV6whmfa6CZtqt6Ml4NgFH1B-UqCxc59ziqfk.png"
+        }
+      },
+      "trophies": 469,
+      "builderBaseTrophies": 2516,
+      "clanRank": 18,
+      "previousClanRank": 0,
+      "donations": 0,
+      "donationsReceived": 78
+    },
+    {
+      "tag": "#Q8QYCJ02Y",
+      "name": "Abhi'sclan",
+      "role": "admin",
+      "townHallLevel": 13,
+      "expLevel": 164,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000014,
+        "name": "Valkyrie League 14",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/7AbbZbiV6whmfa6CZtqt6Ml4NgFH1B-UqCxc59ziqfk.png"
+        }
+      },
+      "trophies": 379,
+      "builderBaseTrophies": 3216,
+      "clanRank": 19,
+      "previousClanRank": 15,
+      "donations": 1823,
+      "donationsReceived": 154
+    },
+    {
+      "tag": "#YQUG8V02C",
+      "name": "Meliodas",
+      "role": "admin",
+      "townHallLevel": 13,
+      "expLevel": 133,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000014,
+        "name": "Valkyrie League 14",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/7AbbZbiV6whmfa6CZtqt6Ml4NgFH1B-UqCxc59ziqfk.png"
+        }
+      },
+      "trophies": 210,
+      "builderBaseTrophies": 2833,
+      "clanRank": 20,
+      "previousClanRank": 16,
+      "donations": 81,
+      "donationsReceived": 467
+    },
+    {
+      "tag": "#Q08V2L9JG",
+      "name": "⚡⚡AYAN GAMER⚡⚡™",
+      "role": "member",
+      "townHallLevel": 14,
+      "expLevel": 144,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000014,
+        "name": "Valkyrie League 14",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/7AbbZbiV6whmfa6CZtqt6Ml4NgFH1B-UqCxc59ziqfk.png"
+        }
+      },
+      "trophies": 108,
+      "builderBaseTrophies": 2358,
+      "clanRank": 21,
+      "previousClanRank": 17,
+      "donations": 5,
+      "donationsReceived": 0
+    },
+    {
+      "tag": "#L2JY89L22",
+      "name": "Meynard",
+      "role": "member",
+      "townHallLevel": 13,
+      "expLevel": 125,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000014,
+        "name": "Valkyrie League 14",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/7AbbZbiV6whmfa6CZtqt6Ml4NgFH1B-UqCxc59ziqfk.png"
+        }
+      },
+      "trophies": 65,
+      "builderBaseTrophies": 1927,
+      "clanRank": 22,
+      "previousClanRank": 18,
+      "donations": 221,
+      "donationsReceived": 627
+    },
+    {
+      "tag": "#R8Q20808U",
+      "name": "ONE PIECE",
+      "role": "member",
+      "townHallLevel": 13,
+      "expLevel": 72,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000014,
+        "name": "Valkyrie League 14",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/7AbbZbiV6whmfa6CZtqt6Ml4NgFH1B-UqCxc59ziqfk.png"
+        }
+      },
+      "trophies": 24,
+      "builderBaseTrophies": 2212,
+      "clanRank": 23,
+      "previousClanRank": 0,
+      "donations": 41,
+      "donationsReceived": 156
+    },
+    {
+      "tag": "#QG2JQ989P",
+      "name": "LilApj333",
+      "role": "member",
+      "townHallLevel": 13,
+      "expLevel": 121,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000012,
+        "name": "Wizard League 12",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/A_ZoGbh1g8wYRWygsQ_wMgbVz8GXvvfavKwlSx8C8PQ.png"
+        }
+      },
+      "trophies": 397,
+      "builderBaseTrophies": 2103,
+      "clanRank": 24,
+      "previousClanRank": 20,
+      "donations": 476,
+      "donationsReceived": 988
+    },
+    {
+      "tag": "#QY8280LR",
+      "name": "Shiven",
+      "role": "member",
+      "townHallLevel": 13,
+      "expLevel": 154,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000012,
+        "name": "Wizard League 12",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/A_ZoGbh1g8wYRWygsQ_wMgbVz8GXvvfavKwlSx8C8PQ.png"
+        }
+      },
+      "trophies": 391,
+      "builderBaseTrophies": 2703,
+      "clanRank": 25,
+      "previousClanRank": 21,
+      "donations": 151,
+      "donationsReceived": 440
+    },
+    {
+      "tag": "#QVPULJUG9",
+      "name": "ASTA",
+      "role": "member",
+      "townHallLevel": 13,
+      "expLevel": 123,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000012,
+        "name": "Wizard League 12",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/A_ZoGbh1g8wYRWygsQ_wMgbVz8GXvvfavKwlSx8C8PQ.png"
+        }
+      },
+      "trophies": 295,
+      "builderBaseTrophies": 2095,
+      "clanRank": 26,
+      "previousClanRank": 22,
+      "donations": 6,
+      "donationsReceived": 0
+    },
+    {
+      "tag": "#GVPV2G0JJ",
+      "name": "KAMLESH444",
+      "role": "admin",
+      "townHallLevel": 13,
+      "expLevel": 95,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000012,
+        "name": "Wizard League 12",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/A_ZoGbh1g8wYRWygsQ_wMgbVz8GXvvfavKwlSx8C8PQ.png"
+        }
+      },
+      "trophies": 162,
+      "builderBaseTrophies": 1021,
+      "clanRank": 27,
+      "previousClanRank": 0,
+      "donations": 0,
+      "donationsReceived": 0
+    },
+    {
+      "tag": "#2PGLPVG2U",
+      "name": "भगव वादळ",
+      "role": "member",
+      "townHallLevel": 12,
+      "expLevel": 151,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000012,
+        "name": "Wizard League 12",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/A_ZoGbh1g8wYRWygsQ_wMgbVz8GXvvfavKwlSx8C8PQ.png"
+        }
+      },
+      "trophies": 0,
+      "builderBaseTrophies": 2493,
+      "clanRank": 28,
+      "previousClanRank": 23,
+      "donations": 133,
+      "donationsReceived": 1244
+    },
+    {
+      "tag": "#YRGU820R8",
+      "name": "rocky",
+      "role": "admin",
+      "townHallLevel": 14,
+      "expLevel": 151,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000011,
+        "name": "Wizard League 11",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/XazuJHG2wjBq39KEA4g4hh1nKJQwVO0fRoVDPHvWwAY.png"
+        }
+      },
+      "trophies": 385,
+      "builderBaseTrophies": 2391,
+      "clanRank": 29,
+      "previousClanRank": 0,
+      "donations": 125,
+      "donationsReceived": 153
+    },
+    {
+      "tag": "#GY98GC8QQ",
+      "name": "⚡⚡Marco⚡⚡",
+      "role": "member",
+      "townHallLevel": 15,
+      "expLevel": 52,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000011,
+        "name": "Wizard League 11",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/XazuJHG2wjBq39KEA4g4hh1nKJQwVO0fRoVDPHvWwAY.png"
+        }
+      },
+      "trophies": 220,
+      "builderBaseTrophies": 40,
+      "clanRank": 30,
+      "previousClanRank": 0,
+      "donations": 0,
+      "donationsReceived": 0
+    },
+    {
+      "tag": "#YCUL0U200",
+      "name": "Long $hlong",
+      "role": "admin",
+      "townHallLevel": 13,
+      "expLevel": 140,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000011,
+        "name": "Wizard League 11",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/XazuJHG2wjBq39KEA4g4hh1nKJQwVO0fRoVDPHvWwAY.png"
+        }
+      },
+      "trophies": 139,
+      "builderBaseTrophies": 2607,
+      "clanRank": 31,
+      "previousClanRank": 25,
+      "donations": 277,
+      "donationsReceived": 2750
+    },
+    {
+      "tag": "#2P2QR828V",
+      "name": "metanoid",
+      "role": "member",
+      "townHallLevel": 11,
+      "expLevel": 173,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000011,
+        "name": "Wizard League 11",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/XazuJHG2wjBq39KEA4g4hh1nKJQwVO0fRoVDPHvWwAY.png"
+        }
+      },
+      "trophies": 30,
+      "builderBaseTrophies": 3008,
+      "clanRank": 32,
+      "previousClanRank": 0,
+      "donations": 0,
+      "donationsReceived": 0
+    },
+    {
+      "tag": "#QPUJU08PL",
+      "name": "mini raikou",
+      "role": "coLeader",
+      "townHallLevel": 13,
+      "expLevel": 118,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000011,
+        "name": "Wizard League 11",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/XazuJHG2wjBq39KEA4g4hh1nKJQwVO0fRoVDPHvWwAY.png"
+        }
+      },
+      "trophies": 0,
+      "builderBaseTrophies": 1582,
+      "clanRank": 33,
+      "previousClanRank": 27,
+      "donations": 69,
+      "donationsReceived": 154
+    },
+    {
+      "tag": "#G88PG0QLC",
+      "name": "IND OP",
+      "role": "member",
+      "townHallLevel": 12,
+      "expLevel": 111,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000010,
+        "name": "Wizard League 10",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/3kJYaYpDwKF8AEkwRLkm-947_t2mAhpEQcZJYulPPIA.png"
+        }
+      },
+      "trophies": 421,
+      "builderBaseTrophies": 2097,
+      "clanRank": 34,
+      "previousClanRank": 31,
+      "donations": 73,
+      "donationsReceived": 576
+    },
+    {
+      "tag": "#PYUYJPR0J",
+      "name": "im_zion",
+      "role": "member",
+      "townHallLevel": 12,
+      "expLevel": 139,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000010,
+        "name": "Wizard League 10",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/3kJYaYpDwKF8AEkwRLkm-947_t2mAhpEQcZJYulPPIA.png"
+        }
+      },
+      "trophies": 407,
+      "builderBaseTrophies": 2475,
+      "clanRank": 35,
+      "previousClanRank": 28,
+      "donations": 129,
+      "donationsReceived": 67
+    },
+    {
+      "tag": "#GV9VQQ08V",
+      "name": "War star",
+      "role": "admin",
+      "townHallLevel": 12,
+      "expLevel": 95,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000010,
+        "name": "Wizard League 10",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/3kJYaYpDwKF8AEkwRLkm-947_t2mAhpEQcZJYulPPIA.png"
+        }
+      },
+      "trophies": 200,
+      "builderBaseTrophies": 0,
+      "clanRank": 36,
+      "previousClanRank": 29,
+      "donations": 2,
+      "donationsReceived": 457
+    },
+    {
+      "tag": "#9VVRGQQUP",
+      "name": "MASTER",
+      "role": "member",
+      "townHallLevel": 12,
+      "expLevel": 119,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000010,
+        "name": "Wizard League 10",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/3kJYaYpDwKF8AEkwRLkm-947_t2mAhpEQcZJYulPPIA.png"
+        }
+      },
+      "trophies": 191,
+      "builderBaseTrophies": 2760,
+      "clanRank": 37,
+      "previousClanRank": 30,
+      "donations": 354,
+      "donationsReceived": 491
+    },
+    {
+      "tag": "#GU0J9CPG2",
+      "name": "ONE PIECE",
+      "role": "member",
+      "townHallLevel": 11,
+      "expLevel": 89,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000010,
+        "name": "Wizard League 10",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/3kJYaYpDwKF8AEkwRLkm-947_t2mAhpEQcZJYulPPIA.png"
+        }
+      },
+      "trophies": 153,
+      "builderBaseTrophies": 2658,
+      "clanRank": 38,
+      "previousClanRank": 0,
+      "donations": 0,
+      "donationsReceived": 0
+    },
+    {
+      "tag": "#GQLG2PQVP",
+      "name": "WOLF",
+      "role": "member",
+      "townHallLevel": 11,
+      "expLevel": 92,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000010,
+        "name": "Wizard League 10",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/3kJYaYpDwKF8AEkwRLkm-947_t2mAhpEQcZJYulPPIA.png"
+        }
+      },
+      "trophies": 0,
+      "builderBaseTrophies": 1843,
+      "clanRank": 39,
+      "previousClanRank": 32,
+      "donations": 143,
+      "donationsReceived": 266
+    },
+    {
+      "tag": "#92CJV099U",
+      "name": "MD SIYAM BD",
+      "role": "member",
+      "townHallLevel": 11,
+      "expLevel": 125,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000010,
+        "name": "Wizard League 10",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/3kJYaYpDwKF8AEkwRLkm-947_t2mAhpEQcZJYulPPIA.png"
+        }
+      },
+      "trophies": 0,
+      "builderBaseTrophies": 2158,
+      "clanRank": 40,
+      "previousClanRank": 33,
+      "donations": 128,
+      "donationsReceived": 1002
+    },
+    {
+      "tag": "#QYP99J0JR",
+      "name": "⚡FAIZAN⚡",
+      "role": "coLeader",
+      "townHallLevel": 12,
+      "expLevel": 121,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000009,
+        "name": "Archer League 9",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/ieEdz9Mqbo7g9iJfXwTnIh7Iwz-37aPEmWma1ENEwXE.png"
+        }
+      },
+      "trophies": 357,
+      "builderBaseTrophies": 2006,
+      "clanRank": 41,
+      "previousClanRank": 34,
+      "donations": 442,
+      "donationsReceived": 1300
+    },
+    {
+      "tag": "#QGCQG2G2J",
+      "name": "Abhi.$harma",
+      "role": "admin",
+      "townHallLevel": 11,
+      "expLevel": 105,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000009,
+        "name": "Archer League 9",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/ieEdz9Mqbo7g9iJfXwTnIh7Iwz-37aPEmWma1ENEwXE.png"
+        }
+      },
+      "trophies": 146,
+      "builderBaseTrophies": 2222,
+      "clanRank": 42,
+      "previousClanRank": 38,
+      "donations": 219,
+      "donationsReceived": 0
+    },
+    {
+      "tag": "#L09U0LPQJ",
+      "name": "BlueLotus",
+      "role": "admin",
+      "townHallLevel": 12,
+      "expLevel": 105,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000009,
+        "name": "Archer League 9",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/ieEdz9Mqbo7g9iJfXwTnIh7Iwz-37aPEmWma1ENEwXE.png"
+        }
+      },
+      "trophies": 0,
+      "builderBaseTrophies": 1010,
+      "clanRank": 43,
+      "previousClanRank": 36,
+      "donations": 159,
+      "donationsReceived": 442
+    },
+    {
+      "tag": "#LVQ0PQRU2",
+      "name": "☢️PROFESSOR☢️",
+      "role": "member",
+      "townHallLevel": 12,
+      "expLevel": 141,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000009,
+        "name": "Archer League 9",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/ieEdz9Mqbo7g9iJfXwTnIh7Iwz-37aPEmWma1ENEwXE.png"
+        }
+      },
+      "trophies": 0,
+      "builderBaseTrophies": 2295,
+      "clanRank": 44,
+      "previousClanRank": 37,
+      "donations": 0,
+      "donationsReceived": 114
+    },
+    {
+      "tag": "#R22C0L80P",
+      "name": "VIKSIT",
+      "role": "member",
+      "townHallLevel": 11,
+      "expLevel": 64,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000008,
+        "name": "Archer League 8",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/lzneKpnJ_ADL1Xb1rceH7-svqRN1UaLnI7ldd8BbyxI.png"
+        }
+      },
+      "trophies": 305,
+      "builderBaseTrophies": 2092,
+      "clanRank": 45,
+      "previousClanRank": 0,
+      "donations": 5,
+      "donationsReceived": 0
+    },
+    {
+      "tag": "#QY2C2GLRC",
+      "name": "⚡metanoid⚡",
+      "role": "leader",
+      "townHallLevel": 10,
+      "expLevel": 86,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000008,
+        "name": "Archer League 8",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/lzneKpnJ_ADL1Xb1rceH7-svqRN1UaLnI7ldd8BbyxI.png"
+        }
+      },
+      "trophies": 11,
+      "builderBaseTrophies": 730,
+      "clanRank": 46,
+      "previousClanRank": 39,
+      "donations": 60,
+      "donationsReceived": 131
+    },
+    {
+      "tag": "#GUCVLQJ8L",
+      "name": "⚡⚡Zyan⚡⚡",
+      "role": "admin",
+      "townHallLevel": 10,
+      "expLevel": 68,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000007,
+        "name": "Archer League 7",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/x1c7byHQmOHQVKGxAn1sqOW2XOCzTYW-e6OKjq-FBco.png"
+        }
+      },
+      "trophies": 0,
+      "builderBaseTrophies": 2154,
+      "clanRank": 47,
+      "previousClanRank": 40,
+      "donations": 0,
+      "donationsReceived": 0
+    },
+    {
+      "tag": "#LJ8QPRJ0R",
+      "name": "ROHAN",
+      "role": "member",
+      "townHallLevel": 10,
+      "expLevel": 71,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000004,
+        "name": "Barbarian League 4",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/CoTrW7nhyiNIDCI4WHUK-0BuhOxibwd_tfASdtmMWFE.png"
+        }
+      },
+      "trophies": 120,
+      "builderBaseTrophies": 839,
+      "clanRank": 48,
+      "previousClanRank": 41,
+      "donations": 0,
+      "donationsReceived": 97
+    },
+    {
+      "tag": "#R8GR9UVC9",
+      "name": "⚡⚡Marco⚡⚡",
+      "role": "member",
+      "townHallLevel": 9,
+      "expLevel": 50,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000004,
+        "name": "Barbarian League 4",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/CoTrW7nhyiNIDCI4WHUK-0BuhOxibwd_tfASdtmMWFE.png"
+        }
+      },
+      "trophies": 0,
+      "builderBaseTrophies": 40,
+      "clanRank": 49,
+      "previousClanRank": 42,
+      "donations": 0,
+      "donationsReceived": 26
+    },
+    {
+      "tag": "#QL9CPUV20",
+      "name": "milo",
+      "role": "member",
+      "townHallLevel": 9,
+      "expLevel": 50,
+      "league": {
+        "id": 29000000,
+        "name": "Unranked"
+      },
+      "leagueTier": {
+        "id": 105000003,
+        "name": "Skeleton League 3",
+        "iconUrls": {
+          "small": "https://api-assets.clashofclans.com/leaguetiers/125/YMnWU25Xs2SvtAkVS2WDDbcUQY-PTfCK9OSvCKJnwJU.png"
+        }
+      },
+      "trophies": 228,
+      "builderBaseTrophies": 1169,
+      "clanRank": 50,
+      "previousClanRank": 43,
+      "donations": 0,
+      "donationsReceived": 104
+    }
+  ],
+  "labels": [
+    {
+      "id": 56000000,
+      "name": "Clan Wars",
+      "iconUrls": {
+        "small": "https://api-assets.clashofclans.com/labels/64/lXaIuoTlfoNOY5fKcQGeT57apz1KFWkN9-raxqIlMbE.png"
+      }
+    },
+    {
+      "id": 56000001,
+      "name": "Clan War League",
+      "iconUrls": {
+        "small": "https://api-assets.clashofclans.com/labels/64/5w60_3bdtYUe9SM6rkxBRyV_8VvWw_jTlDS5ieU3IsI.png"
+      }
+    },
+    {
+      "id": 56000009,
+      "name": "Donations",
+      "iconUrls": {
+        "small": "https://api-assets.clashofclans.com/labels/64/RauzS-02tv4vWm1edZ-q3gPQGWKGANLZ-85HCw_NVP0.png"
+      }
+    }
+  ],
+  "requiredBuilderBaseTrophies": 0,
+  "requiredTownhallLevel": 1,
+  "clanCapital": {
+    "capitalHallLevel": 6,
+    "districts": [
+      {
+        "id": 70000000,
+        "name": "Capital Peak",
+        "districtHallLevel": 6
+      },
+      {
+        "id": 70000001,
+        "name": "Barbarian Camp",
+        "districtHallLevel": 3
+      }
+    ]
+  },
+  "chatLanguage": {
+    "id": 75000000,
+    "name": "English",
+    "languageCode": "EN"
+  }
+}

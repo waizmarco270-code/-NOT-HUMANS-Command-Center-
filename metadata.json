@@ -1,0 +1,6 @@
+{
+  "name": "NOT HUMANS Command Center",
+  "description": "Premium Esports Headquarters and coordination center for the Clash of Clans clan NOT HUMANS #2JVQ8PUUG",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

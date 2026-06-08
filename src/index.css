@@ -1,0 +1,177 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600;700&family=Cinzel+Decorative:wght@700;900&display=swap');
+
+@theme {
+  --font-sans: "Space Grotesk", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-display: "Cinzel Decorative", serif;
+
+  --color-gold-400: #fbbf24;
+  --color-gold-500: #f59e0b;
+}
+
+@layer utilities {
+  /* Legend Fire / Gold Custom Glowing effects */
+  .glow-red {
+    text-shadow: 0 0 10px rgba(239, 68, 68, 0.6), 0 0 20px rgba(239, 68, 68, 0.3);
+  }
+  .glow-gold {
+    text-shadow: 0 0 10px rgba(245, 158, 11, 0.6), 0 0 20px rgba(245, 158, 11, 0.3);
+  }
+  .glow-cyan {
+    text-shadow: 0 0 10px rgba(6, 182, 212, 0.6), 0 0 20px rgba(6, 182, 212, 0.3);
+  }
+
+  /* Spectacular Glassmorphic panels with 3D feel */
+  .glass-card-crimson {
+    background: linear-gradient(135deg, rgba(30, 15, 18, 0.8) 0%, rgba(13, 8, 10, 0.9) 100%);
+    border: 1px solid rgba(225, 29, 72, 0.25);
+    box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+  }
+
+  .glass-card-gold {
+    background: linear-gradient(135deg, rgba(35, 25, 15, 0.8) 0%, rgba(15, 10, 5, 0.9) 100%);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+  }
+
+  .glass-card-purple {
+    background: linear-gradient(135deg, rgba(25, 15, 40, 0.8) 0%, rgba(10, 5, 20, 0.9) 100%);
+    border: 1px solid rgba(168, 85, 247, 0.25);
+    box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+  }
+
+  .glass-card-cyan {
+    background: linear-gradient(135deg, rgba(10, 25, 30, 0.8) 0%, rgba(5, 10, 15, 0.9) 100%);
+    border: 1px solid rgba(6, 182, 212, 0.25);
+    box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+  }
+
+  .glass-card-bronze {
+    background: linear-gradient(135deg, rgba(35, 20, 15, 0.8) 0%, rgba(15, 8, 5, 0.9) 100%);
+    border: 1px solid rgba(217, 119, 6, 0.25);
+    box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+  }
+
+  .glass-card-green {
+    background: linear-gradient(135deg, rgba(12, 30, 15, 0.8) 0%, rgba(5, 15, 8, 0.9) 100%);
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+  }
+
+  .glass-card-standard {
+    background: linear-gradient(135deg, rgba(15, 15, 18, 0.75) 0%, rgba(7, 7, 8, 0.95) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+  }
+
+  /* Awesome Active 3D Hover tilt effect */
+  .card-3d {
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease, border-color 0.4s ease;
+  }
+  .card-3d:hover {
+    transform: translateY(-8px) scale(1.02) rotateX(2deg) rotateY(1deg);
+    box-shadow: 0 25px 50px -12px rgba(220, 38, 38, 0.25);
+    border-color: rgba(220, 38, 38, 0.45);
+  }
+
+  .card-3d-gold {
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease, border-color 0.4s ease;
+  }
+  .card-3d-gold:hover {
+    transform: translateY(-8px) scale(1.02) rotateX(2deg) rotateY(1deg);
+    box-shadow: 0 25px 50px -12px rgba(245, 158, 11, 0.25);
+    border-color: rgba(245, 158, 11, 0.45);
+  }
+}
+
+/* Pulse / Flowing keyframes for ultimate 3D gaming feel */
+@keyframes volcanic-pulsate {
+  0%, 100% {
+    transform: scale(1) translate(0, 0);
+    opacity: 0.15;
+  }
+  50% {
+    transform: scale(1.1) translate(4%, 3%);
+    opacity: 0.22;
+  }
+}
+
+@keyframes lava-glow-flow {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.volcanic-ambient {
+  animation: volcanic-pulsate 12s ease-in-out infinite;
+}
+
+/* Custom gorgeous dynamic background class */
+.clash-cosmic-bg {
+  background-color: #030203;
+  background-image: 
+    linear-gradient(to bottom, rgba(3, 2, 4, 0.45) 0%, rgba(13, 3, 5, 0.8) 50%, rgba(2, 1, 3, 0.98) 100%),
+    url('https://wallpaperaccess.com/full/1594957.jpg'); /* Sovereign Clash of Clans high contrast battlefield backdrop */
+  background-attachment: fixed;
+  background-size: cover;
+  background-position: center;
+}
+
+/* Floating flame sparks / embers with 3D depth and glow */
+@keyframes spark-rise {
+  0% {
+    transform: translateY(105vh) translateX(0) scale(0.6) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.95;
+  }
+  90% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(-5vh) translateX(120px) scale(0.15) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.coc-ember {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: radial-gradient(circle, #f59e0b 30%, #ef4444 80%);
+  border-radius: 50%;
+  filter: blur(0.5px) drop-shadow(0 0 5px #ef4444);
+  pointer-events: none;
+  animation: spark-rise 16s linear infinite;
+  z-index: 2;
+}
+
+/* Glowing scrollbar for premium desktop layout */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0d090a;
+}
+::-webkit-scrollbar-thumb {
+  background: #9f1239;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #fb7185;
+}
+

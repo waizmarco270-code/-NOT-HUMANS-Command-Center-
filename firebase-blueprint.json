@@ -1,0 +1,192 @@
+{
+  "entities": {
+    "Member": {
+      "title": "Member",
+      "description": "Profile info of active or former members synced from CoC API",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Google UID" },
+        "playerTag": { "type": "string", "description": "CoC Tag e.g. #LUP8G02" },
+        "playerName": { "type": "string" },
+        "role": { "type": "string", "description": "Leader, Co-Leader, Elder, Member" },
+        "townHall": { "type": "number" },
+        "trophies": { "type": "number" },
+        "warStars": { "type": "number" },
+        "status": { "type": "string", "description": "Active or Former Member" },
+        "specialty": { "type": "string", "description": "e.g. Lalo Specialist" },
+        "joinedAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "playerTag", "playerName", "role", "status", "joinedAt", "updatedAt"]
+    },
+    "Chat": {
+      "title": "ChatMessage",
+      "description": "A real-time chat message in global or war room chatter",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "text": { "type": "string" },
+        "authorUid": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorTag": { "type": "string" },
+        "authorRole": { "type": "string" },
+        "room": { "type": "string", "description": "global or war" },
+        "imageUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "pinned": { "type": "boolean" },
+        "replyTo": { "type": "string" }
+      },
+      "required": ["id", "text", "authorUid", "authorName", "room", "createdAt"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "Official broadcast for clan",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "authorUid": { "type": "string" },
+        "authorName": { "type": "string" },
+        "pinned": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "content", "authorUid", "authorName", "createdAt"]
+    },
+    "CWLPlan": {
+      "title": "CWLPlan",
+      "description": "CWL war strategy instructions and tracking",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "usually war_day_X" },
+        "opponentName": { "type": "string" },
+        "warDay": { "type": "number" },
+        "leaderNotes": { "type": "string" },
+        "coLeaderNotes": { "type": "string" },
+        "updatedBy": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "opponentName", "warDay", "updatedAt"]
+    },
+    "Giveaway": {
+      "title": "Giveaway",
+      "description": "Pass or item giveaways created by Leader",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "prize": { "type": "string" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "endsAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "description": "active or ended" },
+        "winnerUid": { "type": "string" },
+        "winnerName": { "type": "string" }
+      },
+      "required": ["id", "title", "prize", "createdAt", "endsAt", "status"]
+    },
+    "Strategy": {
+      "title": "Strategy",
+      "description": "An attack strategy layout uploaded by some member",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "images": { "type": "string" },
+        "videoUrl": { "type": "string" },
+        "baseLink": { "type": "string" },
+        "authorUid": { "type": "string" },
+        "authorName": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "category", "description", "authorUid", "authorName", "createdAt"]
+    },
+    "History": {
+      "title": "HistoryMilestone",
+      "description": "Milestones and major achievements",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "type": { "type": "string" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "date": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "type", "description", "date", "createdAt"]
+    },
+    "BaseLayout": {
+      "title": "BaseLayout",
+      "description": "Base designs under NOT HUMANS VAULT or PUBLIC LIBRARY categorised by TH 7-18",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "baseLink": { "type": "string" },
+        "thLevel": { "type": "number" },
+        "rank": { "type": "number" },
+        "vaultType": { "type": "string" },
+        "authorUid": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorRole": { "type": "string" },
+        "approved": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "description", "imageUrl", "baseLink", "thLevel", "rank", "vaultType", "authorUid", "authorName", "authorRole", "approved", "createdAt"]
+    },
+    "THImage": {
+      "title": "THImage",
+      "description": "Custom screenshot/photo for the townhall categories",
+      "type": "object",
+      "properties": {
+        "thLevel": { "type": "number" },
+        "imageUrl": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["thLevel", "imageUrl", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/members/{memberId}": {
+      "schema": "Member",
+      "description": "Saves clan member profiles using their Firebase login UID"
+    },
+    "/chats/{chatId}": {
+      "schema": "Chat",
+      "description": "Active global and war room chats"
+    },
+    "/announcements/{announcementId}": {
+      "schema": "Announcement",
+      "description": "Official notices"
+    },
+    "/cwl_plans/{planId}": {
+      "schema": "CWLPlan",
+      "description": "Planning and assignments for CWL"
+    },
+    "/giveaways/{giveawayId}": {
+      "schema": "Giveaway",
+      "description": "Pass and currency giveaways"
+    },
+    "/strategies/{strategyId}": {
+      "schema": "Strategy",
+      "description": "Guides and links for base designs/attacks"
+    },
+    "/history/{historyId}": {
+      "schema": "History",
+      "description": "Historic victories and achievements"
+    },
+    "/bases/{baseId}": {
+      "schema": "BaseLayout",
+      "description": "Premium layout designs by TH categorised in private and public vaults"
+    },
+    "/th_images/{thLevel}": {
+      "schema": "THImage",
+      "description": "Custom Town Hall background layout images uploaded by Leader"
+    }
+  }
+}
