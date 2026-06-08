@@ -221,7 +221,7 @@ async function fetchFromCoc(endpoint: string) {
   if (!apiKey) {
     throw new Error("Missing Clash of Clans API key in environment");
   }
-  const apiBase = process.env.CLASH_API_BASE_URL || "https://api.clashofclans.com/v1";
+  const apiBase = process.env.CLASH_API_BASE_URL || "https://cocproxy.royaleapi.dev/v1";
   const response = await fetch(`${apiBase}${endpoint}`, {
     headers: {
       Authorization: `Bearer ${apiKey}`,

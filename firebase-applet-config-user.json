@@ -1,10 +1,10 @@
 {
   "projectId": "nothumans",
-  "appId": "1:5655230175:web:9258d9db7714e134eddb6a",
-  "apiKey": "AIzaSyDi7uMTmwgNLDzSZl3DGAVnfd0rYpO4N8w",
+  "appId": "1:565230175:web:9258d9db7714e134eddb6a",
+  "apiKey": "AIzaSyDi7uMTmwgNLDzSZL3DGAvnfd0rYp04N8w",
   "authDomain": "nothumans.firebaseapp.com",
   "firestoreDatabaseId": "(default)",
   "storageBucket": "nothumans.firebasestorage.app",
-  "messagingSenderId": "5655230175",
+  "messagingSenderId": "565230175",
   "measurementId": "G-X25WR1GEYS"
 }

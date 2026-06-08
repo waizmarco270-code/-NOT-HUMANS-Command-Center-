@@ -942,16 +942,35 @@ export default function App() {
       await signInWithPopup(auth, googleProvider);
     } catch (err: any) {
       console.error("Google authentication failed. Attempting anonymous fallback:", err);
+      
+      const googleErrCode = err.code || "unknown";
+      let googleFriendlyMsg = "Google login is restricted.";
+      if (googleErrCode === "auth/unauthorized-domain") {
+        googleFriendlyMsg = "Google login: Domain not authorized. Add " + window.location.hostname + " to authorized domains in Firebase.";
+      } else if (googleErrCode === "auth/operation-not-allowed") {
+        googleFriendlyMsg = "Google login: Provider not enabled. Enable Google sign-in in Firebase Auth Console.";
+      }
+
       setToast({
-        message: "Google login is currently restricted. Activating Sovereign Instant Bypass...",
+        message: `${googleFriendlyMsg} Attempting Sovereign Instant Bypass...`,
         type: "info"
       });
+
       try {
         await signInAnonymously(auth);
       } catch (anonErr: any) {
         console.error("Anonymous authentication failed too:", anonErr);
+        const anonErrCode = anonErr.code || "unknown";
+        let finalMsg = `Secure session activation failed (${anonErrCode}).`;
+        
+        if (anonErrCode === "auth/operation-not-allowed") {
+          finalMsg = "Access Denied: Please enable 'Anonymous' authentication provider in your Firebase project Auth settings.";
+        } else if (anonErrCode === "auth/admin-restricted-operation") {
+          finalMsg = "Access Denied: Anonymous login is restricted under admin settings in Firebase Console.";
+        }
+
         setToast({
-          message: "Secure session activation failed. Please check network connection.",
+          message: finalMsg,
           type: "error"
         });
       }

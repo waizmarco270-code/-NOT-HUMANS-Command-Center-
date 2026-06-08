@@ -3,18 +3,28 @@ import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import firebaseConfig from "../firebase-applet-config.json";
 
-// Dynamic configuration matching keys precisely to allow smooth override on Vercel
+// Dynamic configuration matching keys precisely to allow smooth override on Vercel.
+// On AI Studio container workspace, platform-specific environment variables for the default test database may take precedence.
+// We only allow environment variable override if we are NOT in an AI Studio preview AND the override project ID matches our local target config project ID.
 const metaEnv = (import.meta as any).env || {};
+const isAiStudio = typeof window !== "undefined" && (window.location.hostname.includes("run.app") || window.location.hostname.includes("aistudio"));
+const useEnvOverride = !isAiStudio && metaEnv.VITE_FIREBASE_API_KEY && (metaEnv.VITE_FIREBASE_PROJECT_ID === firebaseConfig.projectId);
 
 const finalConfig = {
-  apiKey: metaEnv.VITE_FIREBASE_API_KEY || firebaseConfig.apiKey,
-  authDomain: metaEnv.VITE_FIREBASE_AUTH_DOMAIN || firebaseConfig.authDomain,
-  projectId: metaEnv.VITE_FIREBASE_PROJECT_ID || firebaseConfig.projectId,
-  storageBucket: metaEnv.VITE_FIREBASE_STORAGE_BUCKET || firebaseConfig.storageBucket,
-  messagingSenderId: metaEnv.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseConfig.messagingSenderId,
-  appId: metaEnv.VITE_FIREBASE_APP_ID || firebaseConfig.appId,
-  firestoreDatabaseId: metaEnv.VITE_FIREBASE_DATABASE_ID || firebaseConfig.firestoreDatabaseId || "(default)"
+  apiKey: (useEnvOverride && metaEnv.VITE_FIREBASE_API_KEY) ? metaEnv.VITE_FIREBASE_API_KEY : firebaseConfig.apiKey,
+  authDomain: (useEnvOverride && metaEnv.VITE_FIREBASE_AUTH_DOMAIN) ? metaEnv.VITE_FIREBASE_AUTH_DOMAIN : firebaseConfig.authDomain,
+  projectId: (useEnvOverride && metaEnv.VITE_FIREBASE_PROJECT_ID) ? metaEnv.VITE_FIREBASE_PROJECT_ID : firebaseConfig.projectId,
+  storageBucket: (useEnvOverride && metaEnv.VITE_FIREBASE_STORAGE_BUCKET) ? metaEnv.VITE_FIREBASE_STORAGE_BUCKET : firebaseConfig.storageBucket,
+  messagingSenderId: (useEnvOverride && metaEnv.VITE_FIREBASE_MESSAGING_SENDER_ID) ? metaEnv.VITE_FIREBASE_MESSAGING_SENDER_ID : firebaseConfig.messagingSenderId,
+  appId: (useEnvOverride && metaEnv.VITE_FIREBASE_APP_ID) ? metaEnv.VITE_FIREBASE_APP_ID : firebaseConfig.appId,
+  firestoreDatabaseId: (useEnvOverride && metaEnv.VITE_FIREBASE_DATABASE_ID) ? metaEnv.VITE_FIREBASE_DATABASE_ID : (firebaseConfig.firestoreDatabaseId || "(default)")
 };
+
+if (typeof window !== "undefined") {
+  console.log("🔥 [Firebase Config Diagnostics] Active Project ID:", finalConfig.projectId);
+  console.log("🔑 [Firebase Config Diagnostics] Active API Key (masked):", finalConfig.apiKey ? `${finalConfig.apiKey.slice(0, 8)}...` : "NONE");
+  console.log("📦 [Firebase Config Diagnostics] Active Database ID:", finalConfig.firestoreDatabaseId);
+}
 
 const app = initializeApp(finalConfig);
 export const db = getFirestore(app, finalConfig.firestoreDatabaseId); /* CRITICAL: The app will break without this line */
