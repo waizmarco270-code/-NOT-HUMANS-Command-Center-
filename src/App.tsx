@@ -63,6 +63,8 @@ export default function App() {
   const [registering, setRegistering] = useState(false);
   const [activeTab, setActiveTab] = useState("hq");
   const [isSidebarOpen, setIsSidebarOpen] = useState(typeof window !== "undefined" ? window.innerWidth >= 1024 : true);
+  const [pendingPasscodeRegistration, setPendingPasscodeRegistration] = useState<any>(null);
+  const [passcodeInput, setPasscodeInput] = useState("");
   
   // Tactical custom notification and window.alert interceptor
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
@@ -592,6 +594,21 @@ export default function App() {
     setNotifications([]);
   };
 
+  const handleApprovePending = async (uid: string, result: boolean) => {
+    try {
+      const dbRef = doc(db, "members", uid);
+      if (result) {
+        await updateDoc(dbRef, { status: "Active", isRegisteredUser: true });
+        setToast({ message: "Master, player has been officially APPROVED! 🛡️", type: "success" });
+      } else {
+        await deleteDoc(dbRef);
+        setToast({ message: "Master, player was REJECTED and banished! ⚔️", type: "error" });
+      }
+    } catch (e) {
+      console.error("Failed to approve player:", e);
+    }
+  };
+
   // Dynamic user specific details
   const [playerData, setPlayerData] = useState<any>(null);
 
@@ -886,6 +903,41 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  // 2.7 Fetch Pending Approvals for Leader
+  useEffect(() => {
+    if (!user || !isRegistered || (cocRole !== "Leader" && cocRole !== "Co-Leader")) return;
+
+    const q = query(
+      collection(db, "members"),
+      where("status", "==", "Pending")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === "added") {
+          const item = change.doc.data();
+          const pendingUid = change.doc.id;
+          
+          const notifId = `approval_${pendingUid}`;
+          
+          setNotifications(prev => {
+            if (prev.some(n => n.id === notifId)) return prev;
+            return [{
+              id: notifId,
+              type: "announcement", // Repurpose announcement icon or generic type
+              title: "👑 PENDING APPROVAL",
+              message: `Unknown tag ${item.playerTag} (${item.playerName}) is requesting to sync a profile not in our live clan roster.`,
+              timestamp: Date.now(),
+              isRead: false
+            }, ...prev];
+          });
+        }
+      });
+    });
+
+    return () => unsubscribe();
+  }, [user, isRegistered, cocRole]);
+
   // 3. Sync Clan stats with periodic high-frequency polling from API proxy for instant real-time responsiveness
   useEffect(() => {
     const fetchStats = async () => {
@@ -1024,7 +1076,7 @@ export default function App() {
           }
         }
 
-        const userStatus = "Active";
+        const userStatus = body.needsApproval ? "Pending" : "Active";
         // Map CoC role to website role
         let assignedRole = "Member";
         console.log("Player raw role detection:", player.role);
@@ -1035,43 +1087,15 @@ export default function App() {
         console.log("Assigned role:", assignedRole);
 
         // Security Passcode Challenge for Leaders and Co-Leaders to prevent unauthorized claims
-        if (assignedRole === "Leader" || assignedRole === "Co-Leader" || player.tag === "#PV9GPQPUC" || player.tag?.toUpperCase() === "#PV9GPQPUC") {
+        if (!body.needsApproval && (assignedRole === "Leader" || assignedRole === "Co-Leader" || player.tag === "#PV9GPQPUC" || player.tag?.toUpperCase() === "#PV9GPQPUC")) {
           console.log("Triggering passcode prompt for tag:", player.tag);
-          const secret = prompt("⚔️ SECURITY PASSCODE VERIFICATION ⚔️\n\nComrade, this tag has elite permissions (Leader/Co-Leader).\nEnter the official NOT HUMANS clan passcode to authorize registration:\n\n(Passcode: NOTHUMANS_LEADER)");
-          const sanitizedSecret = secret ? secret.trim().toUpperCase() : "";
-          console.log("Submitted secret:", sanitizedSecret);
-          if (sanitizedSecret !== "NOTHUMANS_LEADER" && sanitizedSecret !== "NOTHUMANS" && sanitizedSecret !== "LEADER") {
-            alert("❌ Verification Rejected: Invalid Sovereign Passcode.");
-            setRegistering(false);
-            return;
-          }
+          setPendingPasscodeRegistration({ body, assignedRole, userStatus, player });
+          setShowTagModal(false);
+          setRegistering(false);
+          return;
         }
 
-        // Save member to Firestore
-        const memberRef = doc(db, "members", user.uid);
-        const newMember: Member = {
-          uid: user.uid,
-          playerTag: player.tag,
-          playerName: player.name,
-          role: assignedRole as any,
-          townHall: player.townHallLevel || 15,
-          trophies: player.trophies || 5000,
-          warStars: player.warStars || 1000,
-          status: userStatus as any,
-          specialty: "QC Hybrid Specialist", // default selection
-          isRegisteredUser: true,
-          joinedAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-
-        await setDoc(memberRef, newMember);
-        setMember(newMember);
-        setCocRole(newMember.role);
-        setIsRegistered(true);
-        setShowTagModal(false);
-        setPlayerData(player);
-        
-        alert(`Master, Verification Successful!\nMatched Comrade: ${player.name}\nDesignation: ${newMember.role}`);
+        await completeRegistration(body, assignedRole, userStatus, player);
       } else {
         alert(body.error || `Master, this Player Tag does not exist or does not belong to our official 'NOT HUMANS' clan (#2JVQ8PUUG)!`);
       }
@@ -1080,6 +1104,63 @@ export default function App() {
       alert("Master, verification server is offline or returned an error. Please retry!");
     } finally {
       setRegistering(false);
+    }
+  };
+
+  const completeRegistration = async (body: any, assignedRole: string, userStatus: string, player: any) => {
+    if (!user) return;
+    try {
+      const memberRef = doc(db, "members", user.uid);
+      const newMember: Member = {
+        uid: user.uid,
+        playerTag: player.tag,
+        playerName: player.name,
+        role: assignedRole as any,
+        townHall: player.townHallLevel || 15,
+        trophies: player.trophies || 5000,
+        warStars: player.warStars || 1000,
+        status: userStatus as any,
+        specialty: "QC Hybrid Specialist", // default selection
+        isRegisteredUser: true,
+        joinedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      await setDoc(memberRef, newMember);
+      setMember(newMember);
+      setCocRole(newMember.role);
+      setIsRegistered(true);
+      setShowTagModal(false);
+      setPlayerData(player);
+      
+      alert(`Master, Verification Successful!\nMatched Comrade: ${player.name}\nDesignation: ${newMember.role}`);
+    } catch (err: any) {
+      console.error("Verification commit failed:", err);
+      alert("Master, database offline.");
+    }
+  };
+
+  const submitPasscode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const sanitizedSecret = passcodeInput.trim().toUpperCase();
+    if (sanitizedSecret !== "NOTHUMANS_LEADER" && sanitizedSecret !== "NOTHUMANS" && sanitizedSecret !== "LEADER") {
+      alert("❌ Verification Rejected: Invalid Sovereign Passcode.");
+      setPendingPasscodeRegistration(null);
+      setPasscodeInput("");
+      return;
+    }
+    
+    if (pendingPasscodeRegistration) {
+      setRegistering(true);
+      await completeRegistration(
+        pendingPasscodeRegistration.body,
+        pendingPasscodeRegistration.assignedRole,
+        pendingPasscodeRegistration.userStatus,
+        pendingPasscodeRegistration.player
+      );
+      setRegistering(false);
+      setPendingPasscodeRegistration(null);
+      setPasscodeInput("");
     }
   };
 
@@ -1278,6 +1359,7 @@ export default function App() {
           onMarkAsRead={handleMarkNotifAsRead}
           onMarkAllAsRead={handleMarkAllNotifsAsRead}
           onClearNotifications={handleClearAllNotifs}
+          onApprovePending={handleApprovePending}
         />
       </div>
 
@@ -2507,6 +2589,57 @@ export default function App() {
 
       {/* Sliding Profile Drawer Panel */}
       <AnimatePresence>
+        {pendingPasscodeRegistration && (
+          <motion.div 
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <div className="max-w-md w-full bg-zinc-950 border-2 border-amber-500 shadow-[0_0_40px_rgba(245,158,11,0.2)] rounded-2xl overflow-hidden p-6 relative">
+              <div className="text-center space-y-3 mb-6">
+                <ShieldAlert className="w-12 h-12 text-amber-500 mx-auto animate-pulse" />
+                <h3 className="font-sans text-xl font-black uppercase tracking-widest text-amber-500">
+                  SECURITY PASSCODE VERIFICATION
+                </h3>
+                <p className="text-xs font-mono text-zinc-400">
+                  Comrade, this tag has elite permissions. Enter the official NOT HUMANS clan passcode to authorize registration:
+                </p>
+              </div>
+
+              <form onSubmit={submitPasscode} className="space-y-4">
+                <input
+                  type="password"
+                  placeholder="Enter Secret Passcode"
+                  value={passcodeInput}
+                  onChange={e => setPasscodeInput(e.target.value)}
+                  className="w-full bg-black border border-amber-900 focus:border-amber-500 rounded-lg p-3 text-center text-amber-500 font-mono text-lg tracking-widest outline-none transition-all placeholder:text-zinc-700"
+                  autoFocus
+                />
+                
+                <div className="flex items-center space-x-3 pt-2">
+                  <button
+                    type="submit"
+                    disabled={registering || !passcodeInput.trim()}
+                    className="flex-1 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-black font-black uppercase font-sans text-sm tracking-widest py-3 rounded-lg flex justify-center items-center cursor-pointer shadow-lg shadow-amber-900/30"
+                  >
+                    {registering ? <RefreshCw className="w-5 h-5 animate-spin" /> : "Authorize"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPendingPasscodeRegistration(null);
+                      setPasscodeInput("");
+                    }}
+                    className="w-24 border border-zinc-800 hover:bg-zinc-900 text-zinc-400 uppercase font-sans font-bold text-xs py-3 rounded-lg cursor-pointer transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </motion.div>
+        )}
+
         {isProfileDrawerOpen && isRegistered && member && (
           <>
             {/* Backdrop */}

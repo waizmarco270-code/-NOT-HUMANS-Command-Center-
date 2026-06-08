@@ -20,6 +20,7 @@ interface HeaderProps {
   onMarkAsRead?: (id: string) => void;
   onMarkAllAsRead?: () => void;
   onClearNotifications?: () => void;
+  onApprovePending?: (uid: string, result: boolean) => void;
 }
 
 export default function Header({
@@ -38,7 +39,8 @@ export default function Header({
   notifications = [],
   onMarkAsRead,
   onMarkAllAsRead,
-  onClearNotifications
+  onClearNotifications,
+  onApprovePending
 }: HeaderProps) {
   const isLeaderOrCo = cocRole === "Leader" || cocRole === "Co-Leader";
 
@@ -271,9 +273,33 @@ export default function Header({
                               <p className={`text-[11px] mt-1 leading-snug font-sans ${notif.isRead ? "text-zinc-550" : "text-zinc-200"}`}>
                                 {notif.message}
                               </p>
+                              {notif.id.startsWith("approval_") && !notif.isRead && (
+                                <div className="mt-2 flex items-center space-x-2">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onMarkAsRead?.(notif.id);
+                                      onApprovePending?.(notif.id.replace("approval_", ""), true);
+                                    }}
+                                    className="px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-900 text-emerald-400 font-mono text-[9px] uppercase tracking-widest font-black hover:bg-emerald-900/50"
+                                  >
+                                    Accept
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onMarkAsRead?.(notif.id);
+                                      onApprovePending?.(notif.id.replace("approval_", ""), false);
+                                    }}
+                                    className="px-2 py-0.5 rounded bg-red-950/60 border border-red-900 text-red-400 font-mono text-[9px] uppercase tracking-widest font-black hover:bg-red-900/50"
+                                  >
+                                    Reject
+                                  </button>
+                                </div>
+                              )}
                             </div>
                             
-                            {!notif.isRead && (
+                            {!notif.id.startsWith("approval_") && !notif.isRead && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();

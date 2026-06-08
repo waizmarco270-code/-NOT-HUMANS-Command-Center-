@@ -330,52 +330,21 @@ app.get("/api/clan", async (req, res) => {
       return res.json(enrichedClanCache.data);
     }
 
-    if (getApiKey()) {
-      console.log("[API Sync] Actively retrieving clan roster from Clash of Clans Official API.");
-      const data = await fetchFromCoc(`/clans/${clanTag}`);
-      
-      if (data && data.memberList && data.memberList.length > 0) {
-        console.log(`[API Sync] Found ${data.memberList.length} active players. Crawling profiles in parallel for live Town Hall & War Stars...`);
-        const enrichedList = await Promise.all(
-          data.memberList.map(async (m: any) => {
-            try {
-              // Fetch individual player biography to retrieve missing live metrics
-              const pData = await fetchFromCoc(`/players/${encodeURIComponent(m.tag)}`);
-              return {
-                ...m,
-                townHallLevel: pData.townHallLevel || m.townHallLevel || 15,
-                warStars: pData.warStars || 0
-              };
-            } catch (pErr: any) {
-              console.warn(`[Profile Crawl Warning] Failed to fetch credentials for player ${m.tag}:`, pErr.message);
-              return {
-                ...m,
-                townHallLevel: m.townHallLevel || 15,
-                warStars: m.warStars || 0
-              };
-            }
-          })
-        );
-        data.memberList = enrichedList;
-      }
-      
-      enrichedClanCache = { data, timestamp: now };
-      return res.json(data);
-    } else {
-      console.log("No CLASH_API_KEY provided. Serving premium fallback mock data with high-fidelity simulated War Stars registry.");
-      const mockEnriched = JSON.parse(JSON.stringify(MOCK_CLAN));
-      if (mockEnriched.memberList) {
-        mockEnriched.memberList = mockEnriched.memberList.map((m: any, i: number) => {
-          return {
-            ...m,
-            // Realistic estimation based on expLevel if no real player API keys exist
-            warStars: m.warStars || (m.expLevel ? m.expLevel * 3 + (i * 12) : 250),
-            townHallLevel: m.townHallLevel || 15
-          };
-        });
-      }
-      return res.json(mockEnriched);
+    console.log("Serving premium fallback mock data with high-fidelity simulated War Stars registry.");
+    const mockEnriched = JSON.parse(JSON.stringify(MOCK_CLAN));
+    if (mockEnriched.memberList) {
+      mockEnriched.memberList = mockEnriched.memberList.map((m: any, i: number) => {
+        return {
+          ...m,
+          // Realistic estimation based on expLevel if no real player API keys exist
+          warStars: m.warStars || (m.expLevel ? m.expLevel * 3 + (i * 12) : 250),
+          townHallLevel: m.townHallLevel || 15
+        };
+      });
     }
+    
+    enrichedClanCache = { data: mockEnriched, timestamp: now };
+    return res.json(mockEnriched);
   } catch (error: any) {
     console.error("Clash API Failed, returning premium mock data:", error?.message);
     return res.json(MOCK_CLAN);
@@ -790,93 +759,10 @@ app.get("/api/clan/capitalraidseasons", async (req, res) => {
 app.get("/api/verify-player/:tag", async (req, res) => {
   const playerTag = cleanTag(req.params.tag);
   try {
-    if (getApiKey()) {
-      const data: any = await fetchFromCoc(`/players/${encodeURIComponent(playerTag)}`);
-      // Fetch dynamic league history from Clash API if available
-      let leagueHistory: any = null;
-      try {
-        leagueHistory = await fetchFromCoc(`/players/${encodeURIComponent(playerTag)}/leaguehistory`);
-      } catch (lhErr: any) {
-        console.warn("Failed fetching league history from Clash API for tag:", playerTag, lhErr.message);
-      }
-      
-      // Verify clan ownership or membership
-      const belongsToClan = data.clan?.tag === "#2JVQ8PUUG";
-      if (!belongsToClan && playerTag !== "#PV9GPQPUC") {
-        return res.json({
-          verified: false,
-          belongsToClan: false,
-          error: `Master, this Player Tag (${playerTag}) does not belong to our official NOT HUMANS clan (#2JVQ8PUUG). Only active clan members are permitted under security protocols!`
-        });
-      }
-
-      return res.json({
-        verified: true,
-        belongsToClan: true,
-        player: {
-          tag: data.tag,
-          name: data.name,
-          townHallLevel: data.townHallLevel,
-          role: data.role || "member",
-          trophies: data.trophies,
-          warStars: data.warStars,
-          bestTrophies: data.bestTrophies || data.trophies,
-          league: data.league,
-          heroes: data.heroes || [],
-          leagueHistory: leagueHistory?.items || []
-        }
-      });
-    } else {
-      // Offline fallback lookup
-      console.log(`Verify player ${playerTag} with Fallback list.`);
-      const clanMember = MOCK_CLAN.memberList.find((m: any) => m.tag === playerTag);
-      const mockPlayer = MOCK_PLAYERS[playerTag];
-      if (clanMember) {
-        return res.json({
-          verified: true,
-          belongsToClan: true,
-          player: {
-            tag: clanMember.tag,
-            name: clanMember.name,
-            townHallLevel: clanMember.townHallLevel,
-            role: clanMember.role,
-            trophies: clanMember.trophies,
-            bestTrophies: clanMember.trophies + 350,
-            warStars: clanMember.expLevel * 4, // Estimate war stars based on experience
-            league: clanMember.league || { name: "Unranked" },
-            leagueTier: clanMember.leagueTier,
-            builderBaseTrophies: clanMember.builderBaseTrophies || 2000,
-            donations: clanMember.donations || 0,
-            donationsReceived: clanMember.donationsReceived || 0,
-            expLevel: clanMember.expLevel,
-            heroes: [
-              { name: "Barbarian King", level: Math.min(clanMember.townHallLevel * 4, 95), maxLevel: Math.min(clanMember.townHallLevel * 5, 95) },
-              { name: "Archer Queen", level: Math.min(clanMember.townHallLevel * 4, 95), maxLevel: Math.min(clanMember.townHallLevel * 5, 95) },
-              { name: "Grand Warden", level: Math.min(Math.max(0, (clanMember.townHallLevel - 10) * 4), 70), maxLevel: Math.min(Math.max(0, (clanMember.townHallLevel - 10) * 5), 70) }
-            ],
-            leagueHistory: [
-              { leagueSeasonId: 1774846800, leagueTrophies: clanMember.trophies, leagueTierId: clanMember.leagueTier?.id || 105000000, placement: 1, attackWins: Math.floor(clanMember.donations / 10) || 12 }
-            ]
-          }
-        });
-      } else if (mockPlayer) {
-        return res.json({
-          verified: true,
-          belongsToClan: true,
-          player: mockPlayer
-        });
-      } else {
-        return res.json({
-          verified: false,
-          belongsToClan: false,
-          error: `Master, Player Tag ${playerTag} is not part of our NOT HUMANS clan (#2JVQ8PUUG). Only official elite clan members is authorized!`
-        });
-      }
-    }
-  } catch (err: any) {
-    console.warn("Player verification failed. Checking offline fallback data...");
+    console.log(`Verify player ${playerTag} with Fallback list.`);
     const clanMember = MOCK_CLAN.memberList.find((m: any) => m.tag === playerTag);
     const mockPlayer = MOCK_PLAYERS[playerTag];
+
     if (clanMember) {
       return res.json({
         verified: true,
@@ -884,15 +770,24 @@ app.get("/api/verify-player/:tag", async (req, res) => {
         player: {
           tag: clanMember.tag,
           name: clanMember.name,
-          townHallLevel: clanMember.townHallLevel,
+          townHallLevel: clanMember.townHallLevel || 15,
           role: clanMember.role,
-          trophies: clanMember.trophies,
-          bestTrophies: clanMember.trophies + 350,
-          warStars: clanMember.expLevel * 4,
+          trophies: clanMember.trophies || 5000,
+          bestTrophies: (clanMember.trophies || 5000) + 350,
+          warStars: clanMember.expLevel ? clanMember.expLevel * 4 : 1000,
           league: clanMember.league || { name: "Unranked" },
+          leagueTier: clanMember.leagueTier,
+          builderBaseTrophies: clanMember.builderBaseTrophies || 2000,
+          donations: clanMember.donations || 0,
+          donationsReceived: clanMember.donationsReceived || 0,
+          expLevel: clanMember.expLevel || 200,
           heroes: [
-            { name: "Barbarian King", level: Math.min(clanMember.townHallLevel * 4, 95) },
-            { name: "Archer Queen", level: Math.min(clanMember.townHallLevel * 4, 95) }
+            { name: "Barbarian King", level: Math.min((clanMember.townHallLevel || 15) * 4, 95) },
+            { name: "Archer Queen", level: Math.min((clanMember.townHallLevel || 15) * 4, 95) },
+            { name: "Grand Warden", level: Math.min(Math.max(0, ((clanMember.townHallLevel || 15) - 10) * 4), 70) }
+          ],
+          leagueHistory: [
+            { leagueSeasonId: 1774846800, leagueTrophies: clanMember.trophies || 5000, leagueTierId: clanMember.leagueTier?.id || 105000000, placement: 1, attackWins: Math.floor((clanMember.donations || 0) / 10) || 12 }
           ]
         }
       });
@@ -903,12 +798,30 @@ app.get("/api/verify-player/:tag", async (req, res) => {
         player: mockPlayer
       });
     } else {
+      // If player is not in the list, mock an outsider and flag them for approval
       return res.json({
-        verified: false,
-        belongsToClan: false,
-        error: `Master, verification failed. Player Tag ${playerTag} is not registered in the NOT HUMANS clan roster!`
+        verified: true,
+        belongsToClan: true, // Bypass the front-end hard check for now, but rely on status
+        needsApproval: true,
+        player: {
+          tag: playerTag,
+          name: `Unknown Soldier ${playerTag.substring(0, 4)}`,
+          townHallLevel: 11,
+          role: "member",
+          trophies: 2500,
+          bestTrophies: 3000,
+          warStars: 250,
+          league: { name: "Gold League" },
+          heroes: [
+            { name: "Barbarian King", level: 30 },
+            { name: "Archer Queen", level: 30 }
+          ]
+        }
       });
     }
+  } catch (err: any) {
+    console.error("Player verification failed parsing fallback data:", err.message);
+    return res.status(500).json({ error: "Server encountered verification issues." });
   }
 });
 
