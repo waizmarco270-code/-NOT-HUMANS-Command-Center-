@@ -221,7 +221,10 @@ async function fetchFromCoc(endpoint: string) {
   if (!apiKey) {
     throw new Error("Missing Clash of Clans API key in environment");
   }
-  const apiBase = process.env.CLASH_API_BASE_URL || "https://cocproxy.royaleapi.dev/v1";
+  let apiBase = process.env.CLASH_API_BASE_URL || "https://cocproxy.royaleapi.dev/v1";
+  if (!apiBase.endsWith("/v1") && !apiBase.includes("/v1/")) {
+    apiBase = apiBase.replace(/\/+$/, "") + "/v1";
+  }
   const response = await fetch(`${apiBase}${endpoint}`, {
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -868,7 +871,11 @@ app.post("/api/verify-token", async (req, res) => {
 
     if (apiKey) {
       try {
-        const response = await fetch(`https://api.clashofclans.com/v1/players/${encodeURIComponent(cleanedTag)}/verifytoken`, {
+        let apiBase = process.env.CLASH_API_BASE_URL || "https://cocproxy.royaleapi.dev/v1";
+        if (!apiBase.endsWith("/v1") && !apiBase.includes("/v1/")) {
+          apiBase = apiBase.replace(/\/+$/, "") + "/v1";
+        }
+        const response = await fetch(`${apiBase}/players/${encodeURIComponent(cleanedTag)}/verifytoken`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${apiKey}`,

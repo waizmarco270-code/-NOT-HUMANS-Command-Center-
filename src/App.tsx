@@ -940,40 +940,29 @@ export default function App() {
   const handleLogin = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
+      setToast({
+        message: "Welcome, Commander! Secure connection established successfully.",
+        type: "success"
+      });
     } catch (err: any) {
-      console.error("Google authentication failed. Attempting anonymous fallback:", err);
+      console.error("Google authentication failed:", err);
       
       const googleErrCode = err.code || "unknown";
-      let googleFriendlyMsg = "Google login is restricted.";
+      let googleFriendlyMsg = "Google login failed.";
       if (googleErrCode === "auth/unauthorized-domain") {
-        googleFriendlyMsg = "Google login: Domain not authorized. Add " + window.location.hostname + " to authorized domains in Firebase.";
+        googleFriendlyMsg = "Google login: Domain not authorized. Add " + window.location.hostname + " to authorized domains in Firebase Console.";
       } else if (googleErrCode === "auth/operation-not-allowed") {
         googleFriendlyMsg = "Google login: Provider not enabled. Enable Google sign-in in Firebase Auth Console.";
+      } else if (err.message && err.message.includes("closed")) {
+        googleFriendlyMsg = "Login prompt closed by user.";
+      } else {
+        googleFriendlyMsg = `Authentication error: ${err.message || googleErrCode}`;
       }
 
       setToast({
-        message: `${googleFriendlyMsg} Attempting Sovereign Instant Bypass...`,
-        type: "info"
+        message: googleFriendlyMsg,
+        type: "error"
       });
-
-      try {
-        await signInAnonymously(auth);
-      } catch (anonErr: any) {
-        console.error("Anonymous authentication failed too:", anonErr);
-        const anonErrCode = anonErr.code || "unknown";
-        let finalMsg = `Secure session activation failed (${anonErrCode}).`;
-        
-        if (anonErrCode === "auth/operation-not-allowed") {
-          finalMsg = "Access Denied: Please enable 'Anonymous' authentication provider in your Firebase project Auth settings.";
-        } else if (anonErrCode === "auth/admin-restricted-operation") {
-          finalMsg = "Access Denied: Anonymous login is restricted under admin settings in Firebase Console.";
-        }
-
-        setToast({
-          message: finalMsg,
-          type: "error"
-        });
-      }
     }
   };
 
@@ -1374,30 +1363,13 @@ export default function App() {
                     </button>
                   )
                 ) : (
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <button
-                      onClick={handleLogin}
-                      className="flex items-center justify-center space-x-2.5 rounded bg-red-600 hover:bg-red-500 px-6 py-3 font-mono text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-red-950/40 transition-all cursor-pointer"
-                    >
-                      <User className="h-4 w-4" />
-                      <span>Login with Google</span>
-                    </button>
-                    
-                    <button
-                      onClick={async () => {
-                        try {
-                          await signInAnonymously(auth);
-                          setToast({ message: "Sovereign Bypass Initialized! Click 'Verify Player Tag' below to continue.", type: "success" });
-                        } catch (err: any) {
-                          alert("Manual Bypass Failed: " + err.message);
-                        }
-                      }}
-                      className="flex items-center justify-center space-x-2 rounded border border-rose-900/50 bg-red-950/10 hover:bg-red-950/20 px-6 py-3 font-mono text-xs font-bold uppercase tracking-widest text-rose-400 shadow-md transition-all cursor-pointer"
-                    >
-                      <ShieldCheck className="h-4 w-4 text-emerald-500 animate-pulse" />
-                      <span>Sovereign Instant Bypass</span>
-                    </button>
-                  </div>
+                  <button
+                    onClick={handleLogin}
+                    className="flex items-center justify-center space-x-2.5 rounded bg-red-600 hover:bg-red-500 px-6 py-3 font-mono text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-red-950/40 transition-all cursor-pointer"
+                  >
+                    <User className="h-4 w-4" />
+                    <span>Login with Google</span>
+                  </button>
                 )}
 
                 {isInstallable && (
