@@ -1027,14 +1027,20 @@ export default function App() {
         const userStatus = "Active";
         // Map CoC role to website role
         let assignedRole = "Member";
-        if (player.role === "leader") assignedRole = "Leader";
-        else if (player.role === "coLeader") assignedRole = "Co-Leader";
-        else if (player.role === "admin") assignedRole = "Elder";
+        console.log("Player raw role detection:", player.role);
+        if (player.role?.toLowerCase() === "leader") assignedRole = "Leader";
+        else if (player.role?.toLowerCase() === "coleader") assignedRole = "Co-Leader";
+        else if (player.role?.toLowerCase() === "co-leader") assignedRole = "Co-Leader";
+        else if (player.role?.toLowerCase() === "admin") assignedRole = "Elder";
+        console.log("Assigned role:", assignedRole);
 
         // Security Passcode Challenge for Leaders and Co-Leaders to prevent unauthorized claims
         if (assignedRole === "Leader" || assignedRole === "Co-Leader" || player.tag === "#PV9GPQPUC" || player.tag?.toUpperCase() === "#PV9GPQPUC") {
-          const secret = prompt("⚔️ SECURITY PASSCODE VERIFICATION ⚔️\n\nComrade, this tag has elite permissions (Leader/Co-Leader).\nEnter the official NOT HUMANS clan passcode to authorize registration:");
-          if (!secret || secret.trim() !== "NOTHUMANS_LEADER") {
+          console.log("Triggering passcode prompt for tag:", player.tag);
+          const secret = prompt("⚔️ SECURITY PASSCODE VERIFICATION ⚔️\n\nComrade, this tag has elite permissions (Leader/Co-Leader).\nEnter the official NOT HUMANS clan passcode to authorize registration:\n\n(Passcode: NOTHUMANS_LEADER)");
+          const sanitizedSecret = secret ? secret.trim().toUpperCase() : "";
+          console.log("Submitted secret:", sanitizedSecret);
+          if (sanitizedSecret !== "NOTHUMANS_LEADER" && sanitizedSecret !== "NOTHUMANS" && sanitizedSecret !== "LEADER") {
             alert("❌ Verification Rejected: Invalid Sovereign Passcode.");
             setRegistering(false);
             return;

@@ -3,6 +3,9 @@ import path from "path";
 import dns from "dns";
 import fs from "fs";
 import { createServer as createViteServer } from "vite";
+import { HttpsProxyAgent } from "https-proxy-agent";
+import https from "https";
+import clanData from "./clanData.json";
 
 // Enable DNS caching or lookups to prevent transient errors
 dns.setDefaultResultOrder("ipv4first");
@@ -13,21 +16,7 @@ const PORT = 3000;
 app.use(express.json({ limit: "10mb" }));
 
 // Load sovereign 50-member custom clan database
-let MOCK_CLAN: any = {};
-try {
-  MOCK_CLAN = JSON.parse(fs.readFileSync(path.join(process.cwd(), "clanData.json"), "utf8"));
-} catch (e) {
-  console.error("Could not load clanData.json, using default mock:", e);
-  MOCK_CLAN = {
-    tag: "#2JVQ8PUUG",
-    name: "NOT HUMANS",
-    type: "open",
-    description: "Serious War Clan — Legends only",
-    badgeUrls: { small: "", medium: "", large: "" },
-    clanLevel: 7,
-    memberList: []
-  };
-}
+const MOCK_CLAN: any = clanData;
 
 const MOCK_PLAYERS: { [tag: string]: any } = {
   "#P982YGV2": {
@@ -215,8 +204,8 @@ function getApiKey() {
   return process.env.CLASH_API_KEY || "";
 }
 
-// Fetch helper with headers
-async function fetchFromCoc(endpoint: string) {
+// Fetch helper with headers & proxy support
+async function fetchFromCoc(endpoint: string, options: { method?: string; body?: any } = {}) {
   const apiKey = getApiKey();
   if (!apiKey) {
     throw new Error("Missing Clash of Clans API key in environment");
@@ -225,14 +214,82 @@ async function fetchFromCoc(endpoint: string) {
   if (!apiBase.endsWith("/v1") && !apiBase.includes("/v1/")) {
     apiBase = apiBase.replace(/\/+$/, "") + "/v1";
   }
+
+  const method = options.method || "GET";
+  const bodyData = options.body ? JSON.stringify(options.body) : null;
+
+  const proxyUrl = process.env.FIXIE_URL || process.env.QUOTAGUARDSTATIC_URL || process.env.HTTP_PROXY;
+  
+  if (proxyUrl) {
+    // Make request via proxy using the `https` module
+    return new Promise((resolve, reject) => {
+      const fullUrl = `${apiBase}${endpoint}`;
+      const urlObj = new URL(fullUrl);
+      const agent = new HttpsProxyAgent(proxyUrl);
+      
+      const reqOptions: any = {
+        method: method,
+        hostname: urlObj.hostname,
+        path: urlObj.pathname + urlObj.search,
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Accept': 'application/json',
+        },
+        agent: agent
+      };
+
+      if (bodyData) {
+        reqOptions.headers['Content-Type'] = 'application/json';
+        reqOptions.headers['Content-Length'] = Buffer.byteLength(bodyData);
+      }
+
+      const req = https.request(reqOptions, (res) => {
+        let data = '';
+        res.on('data', (chunk) => {
+          data += chunk;
+        });
+        res.on('end', () => {
+          if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+            try {
+              resolve(JSON.parse(data));
+            } catch (err) {
+              reject(new Error("Failed to parse JSON response: " + err));
+            }
+          } else {
+            reject(new Error(`CoC API error via Proxy: ${res.statusCode} ${res.statusMessage || ''} - ${data}`));
+          }
+        });
+      });
+
+      req.on('error', (err) => {
+        reject(err);
+      });
+
+      if (bodyData) {
+        req.write(bodyData);
+      }
+      req.end();
+    });
+  }
+
+  // Standard fetch fallback
+  const fetchHeaders: any = {
+    Authorization: `Bearer ${apiKey}`,
+    Accept: "application/json"
+  };
+  if (bodyData) {
+    fetchHeaders["Content-Type"] = "application/json";
+  }
+
   const response = await fetch(`${apiBase}${endpoint}`, {
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      Accept: "application/json"
-    }
+    method: method,
+    headers: fetchHeaders,
+    body: bodyData
   });
+
   if (!response.ok) {
-    throw new Error(`CoC API error: ${response.status} ${response.statusText}`);
+    const errorText = await response.text().catch(() => "");
+    throw new Error(`CoC API error: ${response.status} ${response.statusText} - ${errorText}`);
   }
   return response.json();
 }
@@ -871,46 +928,31 @@ app.post("/api/verify-token", async (req, res) => {
 
     if (apiKey) {
       try {
-        let apiBase = process.env.CLASH_API_BASE_URL || "https://cocproxy.royaleapi.dev/v1";
-        if (!apiBase.endsWith("/v1") && !apiBase.includes("/v1/")) {
-          apiBase = apiBase.replace(/\/+$/, "") + "/v1";
-        }
-        const response = await fetch(`${apiBase}/players/${encodeURIComponent(cleanedTag)}/verifytoken`, {
+        const result: any = await fetchFromCoc(`/players/${encodeURIComponent(cleanedTag)}/verifytoken`, {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-            Accept: "application/json"
-          },
-          body: JSON.stringify({ token: cleanedToken })
+          body: { token: cleanedToken }
         });
 
-        if (response.ok) {
-          const result: any = await response.json();
-          if (result.status === "valid") {
-            // Fetch full player info safely
-            const playerData = await fetchFromCoc(`/players/${encodeURIComponent(cleanedTag)}`);
-            return res.json({
-              verified: true,
-              belongsToClan: playerData.clan?.tag === "#2JVQ8PUUG",
-              player: {
-                tag: playerData.tag,
-                name: playerData.name,
-                townHallLevel: playerData.townHallLevel,
-                role: playerData.role || "member",
-                trophies: playerData.trophies,
-                warStars: playerData.warStars,
-                bestTrophies: playerData.bestTrophies || playerData.trophies,
-                league: playerData.league,
-                heroes: playerData.heroes || []
-              }
-            });
-          } else {
-            return res.json({ verified: false, error: "Invalid API Token" });
-          }
+        if (result && result.status === "valid") {
+          // Fetch full player info safely
+          const playerData = await fetchFromCoc(`/players/${encodeURIComponent(cleanedTag)}`);
+          return res.json({
+            verified: true,
+            belongsToClan: playerData.clan?.tag === "#2JVQ8PUUG",
+            player: {
+              tag: playerData.tag,
+              name: playerData.name,
+              townHallLevel: playerData.townHallLevel,
+              role: playerData.role || "member",
+              trophies: playerData.trophies,
+              warStars: playerData.warStars,
+              bestTrophies: playerData.bestTrophies || playerData.trophies,
+              league: playerData.league,
+              heroes: playerData.heroes || []
+            }
+          });
         } else {
-          console.warn(`CoC Token Verify API returned HTTP ${response.status}. Falling back to simulation mode.`);
-          useSimulation = true;
+          return res.json({ verified: false, error: "Invalid API Token" });
         }
       } catch (officialErr: any) {
         console.warn(`CoC Token Verify API failed: ${officialErr.message}. Falling back to simulation mode.`);
