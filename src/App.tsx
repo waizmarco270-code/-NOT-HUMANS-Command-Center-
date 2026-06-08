@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { onAuthStateChanged, signInWithPopup, signOut, User as FirebaseUser } from "firebase/auth";
+import { onAuthStateChanged, signInWithPopup, signInAnonymously, signOut, User as FirebaseUser } from "firebase/auth";
 import { doc, getDoc, setDoc, collection, onSnapshot, query, orderBy, getDocs, writeBatch, deleteDoc, where, limit } from "firebase/firestore";
 import { auth, db, googleProvider, handleFirestoreError, OperationType } from "./firebase";
 import { Member, CoCRole } from "./types";
@@ -940,8 +940,21 @@ export default function App() {
   const handleLogin = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
-    } catch (err) {
-      console.error("Google authentication failed:", err);
+    } catch (err: any) {
+      console.error("Google authentication failed. Attempting anonymous fallback:", err);
+      setToast({
+        message: "Google login is currently restricted. Activating Sovereign Instant Bypass...",
+        type: "info"
+      });
+      try {
+        await signInAnonymously(auth);
+      } catch (anonErr: any) {
+        console.error("Anonymous authentication failed too:", anonErr);
+        setToast({
+          message: "Secure session activation failed. Please check network connection.",
+          type: "error"
+        });
+      }
     }
   };
 
@@ -1009,6 +1022,16 @@ export default function App() {
         if (player.role === "leader") assignedRole = "Leader";
         else if (player.role === "coLeader") assignedRole = "Co-Leader";
         else if (player.role === "admin") assignedRole = "Elder";
+
+        // Security Passcode Challenge for Leaders and Co-Leaders to prevent unauthorized claims
+        if (assignedRole === "Leader" || assignedRole === "Co-Leader" || player.tag === "#PV9GPQPUC" || player.tag?.toUpperCase() === "#PV9GPQPUC") {
+          const secret = prompt("⚔️ SECURITY PASSCODE VERIFICATION ⚔️\n\nComrade, this tag has elite permissions (Leader/Co-Leader).\nEnter the official NOT HUMANS clan passcode to authorize registration:");
+          if (!secret || secret.trim() !== "NOTHUMANS_LEADER") {
+            alert("❌ Verification Rejected: Invalid Sovereign Passcode.");
+            setRegistering(false);
+            return;
+          }
+        }
 
         // Save member to Firestore
         const memberRef = doc(db, "members", user.uid);
@@ -1332,13 +1355,30 @@ export default function App() {
                     </button>
                   )
                 ) : (
-                  <button
-                    onClick={handleLogin}
-                    className="flex items-center space-x-2.5 rounded bg-red-600 hover:bg-red-500 px-6 py-3 font-mono text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-red-950/40 transition-all"
-                  >
-                    <User className="h-4 w-4" />
-                    <span>Login with Google</span>
-                  </button>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                      onClick={handleLogin}
+                      className="flex items-center justify-center space-x-2.5 rounded bg-red-600 hover:bg-red-500 px-6 py-3 font-mono text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-red-950/40 transition-all cursor-pointer"
+                    >
+                      <User className="h-4 w-4" />
+                      <span>Login with Google</span>
+                    </button>
+                    
+                    <button
+                      onClick={async () => {
+                        try {
+                          await signInAnonymously(auth);
+                          setToast({ message: "Sovereign Bypass Initialized! Click 'Verify Player Tag' below to continue.", type: "success" });
+                        } catch (err: any) {
+                          alert("Manual Bypass Failed: " + err.message);
+                        }
+                      }}
+                      className="flex items-center justify-center space-x-2 rounded border border-rose-900/50 bg-red-950/10 hover:bg-red-950/20 px-6 py-3 font-mono text-xs font-bold uppercase tracking-widest text-rose-400 shadow-md transition-all cursor-pointer"
+                    >
+                      <ShieldCheck className="h-4 w-4 text-emerald-500 animate-pulse" />
+                      <span>Sovereign Instant Bypass</span>
+                    </button>
+                  </div>
                 )}
 
                 {isInstallable && (
