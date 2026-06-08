@@ -944,12 +944,33 @@ export default function App() {
       try {
         const response = await fetch("/api/clan");
         if (response.ok) {
-          const data = await response.json();
-          setClanStats(data);
-          setLastSyncedTime(new Date());
+           // We might get an HTML response in Vercel. Try to parse JSON.
+          const text = await response.text();
+          try {
+            const data = JSON.parse(text);
+            if (data && data.memberList) {
+              setClanStats(data);
+              setLastSyncedTime(new Date());
+              return;
+            }
+          } catch (e) {
+            console.warn("Could not parse JSON from /api/clan, falling back to local data");
+          }
         }
+        
+        // Fallback to local import if the above fails or response NOT ok
+        const cachedData = await import("../clanData.json");
+        setClanStats(cachedData.default || cachedData);
+        setLastSyncedTime(new Date());
+
       } catch (err) {
         console.error("Could not fetch clan statistics:", err);
+        // Fallback for Vercel static deployments where endpoint fails completely
+        try {
+          const cachedData = await import("../clanData.json");
+          setClanStats(cachedData.default || cachedData);
+          setLastSyncedTime(new Date());
+        } catch(e) {}
       } finally {
         setClanLoading(false);
       }
@@ -959,8 +980,13 @@ export default function App() {
       try {
         const res = await fetch("/api/ip");
         if (res.ok) {
-          const data = await res.json();
-          setOutboundIp(data.ip);
+          const text = await res.text();
+          try {
+             const data = JSON.parse(text);
+             setOutboundIp(data.ip);
+          } catch(e) {
+             setOutboundIp("Failed to query IP");
+          }
         }
       } catch (e) {
         setOutboundIp("Failed to query IP");
