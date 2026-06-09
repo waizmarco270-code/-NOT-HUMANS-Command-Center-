@@ -45,7 +45,8 @@ import {
   Check,
   MoreVertical,
   X,
-  Menu
+  Menu,
+  Edit3
 } from "lucide-react";
 
 interface WarRoomSectionProps {
@@ -157,6 +158,60 @@ export default function WarRoomSection({
   const [showMobileChannels, setShowMobileChannels] = useState(false);
   const [compressing, setCompressing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // --- CUSTOM PREMIUM ADDITIONS BY MARCO ---
+  const [chatTheme, setChatTheme] = useState<"classic" | "forest" | "lava">(() => {
+    return (localStorage.getItem("war_room_chat_theme") as any) || "classic";
+  });
+  const [showThemeDropdown, setShowThemeDropdown] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState<{uid: string, name: string, role: string, lastActive: string}[]>([]);
+  const [showOnlinePopover, setShowOnlinePopover] = useState(false);
+  const [editingMsgId, setEditingMsgId] = useState("");
+  const [editingMsgText, setEditingMsgText] = useState("");
+  const [typingUsers, setTypingUsers] = useState<{uid: string, name: string}[]>([]);
+  const lastTypingWrittenRef = useRef<number>(0);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleInputChange = (text: string) => {
+    setInputText(text);
+
+    if (!userUid) return;
+
+    const typingDocRef = doc(db, "chats_typing", `${activeRoom}_${userUid}`);
+    
+    if (text.trim().length > 0) {
+      const now = Date.now();
+      if (!lastTypingWrittenRef.current || now - lastTypingWrittenRef.current > 4000) {
+        lastTypingWrittenRef.current = now;
+        setDoc(typingDocRef, {
+          roomId: activeRoom,
+          uid: userUid,
+          name: userName,
+          isTyping: true,
+          updatedAt: new Date().toISOString()
+        }, { merge: true }).catch(err => console.warn(err));
+      }
+
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
+      typingTimeoutRef.current = setTimeout(() => {
+        setDoc(typingDocRef, {
+          isTyping: false,
+          updatedAt: new Date().toISOString()
+        }, { merge: true }).catch(err => console.warn(err));
+      }, 3000);
+    } else {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      setDoc(typingDocRef, {
+        isTyping: false,
+        updatedAt: new Date().toISOString()
+      }, { merge: true }).catch(err => console.warn(err));
+    }
+  };
 
   // Dynamic Pin badges for Master
   const [lastPinnedCount, setLastPinnedCount] = useState(0);
@@ -406,6 +461,88 @@ export default function WarRoomSection({
     return () => unsub();
   }, []);
 
+  // Presence Heartbeat & Subscriber
+  useEffect(() => {
+    if (!userUid) return;
+
+    const updatePresence = async () => {
+      try {
+        await setDoc(doc(db, "users_presence", userUid), {
+          uid: userUid,
+          name: userName,
+          role: cocRole || "Member",
+          lastActive: new Date().toISOString()
+        }, { merge: true });
+      } catch (err) {
+        console.warn("Presence heartbeat warning:", err);
+      }
+    };
+
+    updatePresence();
+    const interval = setInterval(updatePresence, 30000); // 30s heartbeats
+
+    // Subscribe to all presence entries
+    const q = query(collection(db, "users_presence"));
+    const unsub = onSnapshot(q, (snapshot) => {
+      const now = new Date();
+      const list: any[] = [];
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (data.lastActive) {
+          const lastActiveDate = new Date(data.lastActive);
+          const diffMs = now.getTime() - lastActiveDate.getTime();
+          // within 80 seconds = online
+          if (diffMs < 80000) {
+            list.push({
+              uid: data.uid,
+              name: data.name,
+              role: data.role,
+              lastActive: data.lastActive
+            });
+          }
+        }
+      });
+      setOnlineUsers(list);
+    }, (err) => {
+      console.warn("Failed tracking online combat presence:", err);
+    });
+
+    return () => {
+      clearInterval(interval);
+      unsub();
+    };
+  }, [userUid, userName, cocRole]);
+
+  // Typing state Subscriber for the active channel
+  useEffect(() => {
+    const q = query(
+      collection(db, "chats_typing"),
+      where("roomId", "==", activeRoom),
+      where("isTyping", "==", true)
+    );
+    const unsub = onSnapshot(q, (snapshot) => {
+      const now = new Date();
+      const list: {uid: string, name: string}[] = [];
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (data.uid !== userUid && data.updatedAt) {
+          const updatedTime = new Date(data.updatedAt);
+          // if typing update is fresh (less than 8 seconds old)
+          if (now.getTime() - updatedTime.getTime() < 8000) {
+            list.push({ uid: data.uid, name: data.name });
+          }
+        }
+      });
+      setTypingUsers(list);
+    }, (err) => {
+      console.warn("Typing monitor warning:", err);
+    });
+    return () => unsub();
+  }, [activeRoom, userUid]);
+
+  // Track messages length to prevent unnecessary visual scrolling lags on reactions/edits
+  const prevMessagesLengthRef = useRef(0);
+
   // 4. Load messages with custom reactivity
   useEffect(() => {
     const q = query(
@@ -438,23 +575,30 @@ export default function WarRoomSection({
             isInspectCard: !!data.isInspectCard,
             inspectedPlayer: data.inspectedPlayer || null,
             isDeleted: !!data.isDeleted,
-            deletedBy: data.deletedBy || ""
+            deletedBy: data.deletedBy || "",
+            isEdited: !!data.isEdited,
+            editedAt: data.editedAt || ""
           } as any);
         }
       });
       
-      // Reverse array so old messages remain at the top
-      setMessages(list.reverse());
+      const reverted = list.reverse();
+      setMessages(reverted);
       
-      // Auto-scroll inside chat box element
-      setTimeout(() => {
-        if (messagesContainerRef.current) {
-          messagesContainerRef.current.scrollTo({
-            top: messagesContainerRef.current.scrollHeight,
-            behavior: "smooth"
-          });
-        }
-      }, 150);
+      // Auto-scroll inside chat box element ONLY if the messages array length grew!
+      if (reverted.length > prevMessagesLengthRef.current) {
+        prevMessagesLengthRef.current = reverted.length;
+        setTimeout(() => {
+          if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTo({
+              top: messagesContainerRef.current.scrollHeight,
+              behavior: "smooth"
+            });
+          }
+        }, 120);
+      } else {
+        prevMessagesLengthRef.current = reverted.length;
+      }
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, "chats");
     });
@@ -510,6 +654,35 @@ export default function WarRoomSection({
     const channelDef = CHANNELS.find(c => c.id === activeRoom);
     if (channelDef?.restricted && !isAuthorized) {
       alert("Master, only Leaders/Co-Leaders can broadcast in the announcements channel!");
+      return;
+    }
+
+    // Intercept if editing message mode is active!
+    if (editingMsgId) {
+      if (!inputText.trim()) {
+        alert("Master, edited strategy message cannot be empty.");
+        return;
+      }
+      try {
+        await updateDoc(doc(db, "chats", editingMsgId), {
+          text: inputText.trim(),
+          isEdited: true,
+          editedAt: new Date().toISOString()
+        });
+
+        // Set typing status off
+        if (userUid) {
+          const typingDocRef = doc(db, "chats_typing", `${activeRoom}_${userUid}`);
+          await setDoc(typingDocRef, { isTyping: false, updatedAt: new Date().toISOString() }, { merge: true });
+        }
+
+        setEditingMsgId("");
+        setEditingMsgText("");
+        setInputText("");
+      } catch (err) {
+        console.error("Failed to edit strategy message:", err);
+        alert("Master, failed to save edited message.");
+      }
       return;
     }
 
@@ -933,9 +1106,109 @@ export default function WarRoomSection({
             </div>
             
             <div className="flex items-center space-x-2 shrink-0">
-              <div className="hidden md:flex text-right items-center space-x-2.5 text-zinc-400 text-[9.5px] font-mono">
-                <span className="tracking-wider">LATENCY: LIVE SYNCO</span>
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              {/* Online Users Indicator Pill Badge */}
+              <button 
+                type="button"
+                onClick={() => setShowOnlinePopover(true)}
+                className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-250/70 text-emerald-700 text-[10px] font-mono font-black uppercase cursor-pointer select-none active:scale-95 transition-all shadow-sm"
+                title="Tap to see who is currently active in command central"
+              >
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                </span>
+                <span>{onlineUsers.length || 1} ACTIVE</span>
+              </button>
+
+              {/* Premium Theme Switcher Button */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowThemeDropdown(!showThemeDropdown)}
+                  className={`flex items-center space-x-1.5 px-2.5 py-2 border rounded-xl transition duration-150 cursor-pointer text-xs font-mono font-black shadow-sm active:scale-95 ${
+                    showThemeDropdown 
+                      ? "bg-amber-600 border-amber-700 text-white hover:bg-amber-700" 
+                      : "bg-white border-zinc-250/80 text-zinc-700 hover:text-amber-600 hover:bg-zinc-50"
+                  }`}
+                  title="Select premium Arena background theme"
+                >
+                  <span>🎨</span>
+                  <span className="hidden sm:inline">THEME</span>
+                </button>
+                {showThemeDropdown && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setShowThemeDropdown(false)} 
+                    />
+                    <div className="absolute right-0 mt-2 w-48 bg-white border border-zinc-200 rounded-xl shadow-2xl p-2 z-50 animate-slide-down text-zinc-950 font-sans">
+                      <div className="px-2.5 py-1.5 border-b border-zinc-100 text-[9px] font-mono font-black text-zinc-400 uppercase tracking-widest">
+                        Tactical Theme selector
+                      </div>
+                      <div className="flex flex-col gap-1 mt-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setChatTheme("classic");
+                            localStorage.setItem("war_room_chat_theme", "classic");
+                            setShowThemeDropdown(false);
+                          }}
+                          className={`flex items-center justify-between w-full px-2.5 py-2 text-xs rounded-lg transition text-left font-bold cursor-pointer ${
+                            chatTheme === "classic" 
+                              ? "bg-stone-50 text-stone-900 font-extrabold" 
+                              : "text-zinc-600 hover:bg-zinc-50"
+                          }`}
+                        >
+                          <span className="flex items-center gap-2">
+                            <span className="text-stone-400">🪵</span>
+                            <span>Classic Defense</span>
+                          </span>
+                          {chatTheme === "classic" && <Check className="h-3.5 w-3.5 text-stone-500" />}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setChatTheme("forest");
+                            localStorage.setItem("war_room_chat_theme", "forest");
+                            setShowThemeDropdown(false);
+                          }}
+                          className={`flex items-center justify-between w-full px-2.5 py-2 text-xs rounded-lg transition text-left font-bold cursor-pointer ${
+                            chatTheme === "forest" 
+                              ? "bg-emerald-50 text-emerald-850 font-extrabold" 
+                              : "text-zinc-600 hover:bg-zinc-50"
+                          }`}
+                        >
+                          <span className="flex items-center gap-2">
+                            <span className="text-emerald-500">🌲</span>
+                            <span>Forest Valley</span>
+                          </span>
+                          {chatTheme === "forest" && <Check className="h-3.5 w-3.5 text-emerald-600" />}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setChatTheme("lava");
+                            localStorage.setItem("war_room_chat_theme", "lava");
+                            setShowThemeDropdown(false);
+                          }}
+                          className={`flex items-center justify-between w-full px-2.5 py-2 text-xs rounded-lg transition text-left font-bold cursor-pointer ${
+                            chatTheme === "lava" 
+                              ? "bg-rose-50 text-red-850 font-extrabold" 
+                              : "text-zinc-600 hover:bg-zinc-50"
+                          }`}
+                        >
+                          <span className="flex items-center gap-2">
+                            <span className="text-red-500">🌋</span>
+                            <span>Magma Fortress</span>
+                          </span>
+                          {chatTheme === "lava" && <Check className="h-3.5 w-3.5 text-red-650" />}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Dynamic PINS Toggle Button in Header */}
@@ -1182,7 +1455,16 @@ export default function WarRoomSection({
           )}
 
           {/* Scrollable messages log frame wrapper with high-contrast luxury patterns */}
-          <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin flex flex-col bg-[#efeae2]/50 bg-[radial-gradient(#d1d5db_1px,transparent_1px)] [background-size:20px_20px]">
+          <div 
+            ref={messagesContainerRef} 
+            className={`flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin flex flex-col transition-all duration-300 ${
+              chatTheme === "forest"
+                ? "bg-[#e2eadc] bg-[radial-gradient(#b2c9a3_1px,transparent_1px)] [background-size:24px_24px]"
+                : chatTheme === "lava"
+                  ? "bg-[#0b0303] bg-[radial-gradient(#e51e1e_0.75px,transparent_0.75px)] [background-size:24px_24px]"
+                  : "bg-[#efeae2]/65 bg-[radial-gradient(#d1d5db_1px,transparent_1px)] [background-size:20px_20px]"
+            }`}
+          >
             
             {/* Infinite loading older queries triggers */}
             {messages.length >= limitCount && (
@@ -1655,6 +1937,11 @@ export default function WarRoomSection({
                       ) : (
                         <p className="font-sans break-words whitespace-pre-wrap leading-relaxed text-xs transition duration-150 select-text text-zinc-900">
                           {renderMessageTextWithMentions(msg.text)}
+                          {msg.isEdited && (
+                            <span className="text-[8.5px] text-blue-600 bg-blue-50 border border-blue-105 rounded-md px-1.5 py-0.2 ml-1.5 font-mono inline-flex items-center gap-0.5" title="Edited within 5 minutes of sending">
+                              ✏️ edited
+                            </span>
+                          )}
                         </p>
                       )}
 
@@ -1745,6 +2032,27 @@ export default function WarRoomSection({
             </div>
           )}
 
+          {/* Active Edit strategy message banner */}
+          {editingMsgId && (
+            <div className="bg-blue-50/95 px-4 py-2 border-t border-blue-200 flex items-center justify-between text-xs font-mono text-blue-800 relative z-10 animate-slide-up">
+              <span className="flex items-center space-x-1.5 truncate">
+                <span className="text-sm shrink-0">✏️</span>
+                <span className="truncate">Editing Strategy: <span className="text-blue-950 italic font-bold">"{editingMsgText}"</span></span>
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingMsgId("");
+                  setEditingMsgText("");
+                  setInputText("");
+                }}
+                className="text-[10px] uppercase font-black tracking-widest text-blue-600 hover:text-blue-950 font-bold bg-blue-150 hover:bg-blue-200 px-2 py-0.5 rounded cursor-pointer shrink-0 ml-2"
+              >
+                Cancel ✕
+              </button>
+            </div>
+          )}
+
           {/* Locked room composition warnings for regular users */}
           {isCurrentRoomLocked && cocRole !== "Leader" && cocRole !== "Co-Leader" ? (
             <div className="p-4 bg-red-50 border-t border-red-100 flex items-center justify-center space-x-2 text-red-700 font-mono text-[9.5px] uppercase tracking-wider">
@@ -1755,6 +2063,25 @@ export default function WarRoomSection({
             /* Composing chat container form - Beautifully Themed for Light WhatsApp style */
             <form onSubmit={handleSend} className="p-3 border-t border-zinc-200 bg-zinc-100 flex flex-col space-y-2 relative z-10 shadow-inner">
               
+              {/* Real-time Typing indicators */}
+              {typingUsers && typingUsers.filter(tu => tu.uid !== userUid).length > 0 && (
+                <div className="flex items-center space-x-1.5 px-2 py-1 bg-rose-50 border border-rose-100 rounded-lg text-[9.5px] font-mono text-rose-700 animate-[pulse_2s_infinite]">
+                  <span className="flex space-x-0.5 shrink-0 py-0.5">
+                    <span className="h-1 w-1 rounded-full bg-red-600 block animate-[bounce_1.4s_infinite_0s]" />
+                    <span className="h-1 w-1 rounded-full bg-red-600 block animate-[bounce_1.4s_infinite_180ms]" />
+                    <span className="h-1 w-1 rounded-full bg-red-600 block animate-[bounce_1.4s_infinite_360ms]" />
+                  </span>
+                  <span>
+                    {(() => {
+                      const list = typingUsers.filter(tu => tu.uid !== userUid);
+                      return list.length === 1 
+                        ? `@${list[0].name} is drafting strategic updates...`
+                        : `${list.length} comrades are planning battle layouts...`;
+                    })()}
+                  </span>
+                </div>
+              )}
+
               {/* Special restriction note for announcement channels */}
               {activeChannelDef.restricted && (
                 <div className="px-2 py-0.5 bg-red-50 border border-red-100 rounded-lg text-center text-[8px] text-red-700 font-mono font-black uppercase tracking-widest animate-pulse">
@@ -1988,22 +2315,32 @@ export default function WarRoomSection({
                 <input
                   type="text"
                   value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
+                  onChange={(e) => handleInputChange(e.target.value)}
                   placeholder={
-                    isCurrentRoomLocked 
-                      ? "Compose emergency protocol (Generals Bypass Mode)..." 
-                      : `Speak in #${activeChannelDef.name.substring(2)}...`
+                    editingMsgId 
+                      ? "Revise your transmission here..."
+                      : isCurrentRoomLocked 
+                        ? "Compose emergency protocol (Generals Bypass Mode)..." 
+                        : `Speak in #${activeChannelDef.name.substring(2)}...`
                   }
-                  className="flex-1 rounded-xl border border-zinc-200 bg-white px-3.5 py-3 font-sans text-xs text-zinc-900 placeholder-zinc-400 outline-none focus:border-rose-500 shadow-sm focus:ring-1 focus:ring-rose-500 h-11"
+                  className={`flex-1 rounded-xl border px-3.5 py-3 font-sans text-xs outline-none shadow-sm focus:ring-1 h-11 transition duration-200 ${
+                    editingMsgId
+                      ? "border-blue-300 bg-blue-50/20 focus:border-blue-500 focus:ring-blue-500 text-blue-900 placeholder-blue-355"
+                      : "border-zinc-200 bg-white focus:border-rose-500 focus:ring-rose-500 text-zinc-900 placeholder-zinc-400"
+                  }`}
                   id="chat-input"
                 />
                 
                 <button
                   type="submit"
-                  className="h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-red-800 to-rose-700 text-white hover:from-rose-700 hover:to-rose-600 transition duration-150 cursor-pointer shadow-md shadow-red-900/10 active:scale-95 flex"
+                  className={`h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl transition duration-150 cursor-pointer shadow-md active:scale-95 flex ${
+                    editingMsgId
+                      ? "bg-gradient-to-r from-blue-750 to-indigo-650 text-white hover:from-blue-650 hover:to-indigo-550 shadow-blue-900/10"
+                      : "bg-gradient-to-r from-red-800 to-rose-700 text-white hover:from-rose-700 hover:to-rose-600 shadow-red-900/10"
+                  }`}
                   id="chat-send-btn"
                 >
-                  <Send className="h-4.5 w-4.5" />
+                  {editingMsgId ? <Check className="h-4.5 w-4.5" /> : <Send className="h-4.5 w-4.5" />}
                 </button>
               </div>
             </form>
@@ -2081,6 +2418,52 @@ export default function WarRoomSection({
 
             {/* Action Operators */}
             <div className="flex flex-col gap-1 font-mono text-[11px]">
+
+              {/* Edit Strategy Message (Available to original author within 5 minutes) */}
+              {activeMenuMsg.authorUid === userUid && !activeMenuMsg.isPoll && !activeMenuMsg.isDeleted && (
+                (() => {
+                  let createdDate: Date;
+                  if (activeMenuMsg.createdAt && typeof activeMenuMsg.createdAt.toDate === "function") {
+                    createdDate = activeMenuMsg.createdAt.toDate();
+                  } else {
+                    createdDate = new Date(activeMenuMsg.createdAt?.seconds ? activeMenuMsg.createdAt.seconds * 1000 : activeMenuMsg.createdAt || Date.now());
+                  }
+                  const diffMinutes = (Date.now() - createdDate.getTime()) / 60000;
+                  const canPerformEdit = diffMinutes <= 5;
+                  const minutesRemaining = Math.max(0, Math.ceil(5 - diffMinutes));
+
+                  return (
+                    <button
+                      type="button"
+                      disabled={!canPerformEdit}
+                      onClick={() => {
+                        if (!canPerformEdit) {
+                          alert(`Master, edit lock has expired! Messages can only be edited within 5 minutes of transmission.`);
+                          return;
+                        }
+                        setEditingMsgId(activeMenuMsg.id);
+                        setEditingMsgText(activeMenuMsg.text);
+                        setInputText(activeMenuMsg.text);
+                        setActiveMenuMsg(null);
+                        setTimeout(() => {
+                          document.getElementById("chat-input")?.focus();
+                        }, 120);
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition font-extrabold cursor-pointer active:scale-[0.98] ${
+                        canPerformEdit 
+                          ? "text-blue-750 hover:bg-blue-50/70" 
+                          : "text-zinc-300 cursor-not-allowed opacity-50 bg-stone-50"
+                      }`}
+                    >
+                      <span className="flex items-center gap-2 text-zinc-750 font-sans">
+                        <Edit3 className={`h-4 w-4 ${canPerformEdit ? "text-blue-600 animate-pulse" : "text-zinc-350"}`} />
+                        <span>Edit Strategy {canPerformEdit ? `(${minutesRemaining}m left)` : `(Expired)`}</span>
+                      </span>
+                      <span className="text-[9px] text-zinc-400 font-mono">{canPerformEdit ? "EDIT" : "LOCK"}</span>
+                    </button>
+                  );
+                })()
+              )}
               
               {/* Reply Transmission */}
               {!activeMenuMsg.isPoll && (
@@ -2210,7 +2593,7 @@ export default function WarRoomSection({
       {/* Shared Custom Interactive Iframe-Safe Action Dialog */}
       {modalDialog && (
         <div className="fixed inset-0 bg-zinc-950/85 backdrop-blur-md z-[999999] flex items-center justify-center p-4 animate-fade-in">
-          <div className="w-full max-w-md bg-zinc-900 border-2 border-zinc-805 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+          <div className="w-full max-w-md bg-zinc-905 border-2 border-zinc-805 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
             {/* Design header lines */}
             <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-red-650 via-red-500 to-red-800" />
             <div className="font-mono text-[8px] text-zinc-550 mb-4 tracking-widest uppercase font-black">⚡ COMMAND SECURE PROTOCOL</div>
@@ -2247,6 +2630,84 @@ export default function WarRoomSection({
               >
                 {modalDialog.type === "confirm" ? (modalDialog.rightBtnText || "Confirm") : (modalDialog.leftBtnText || "OK")}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🟢 ONLINE USERS MODAL LIST OVERLAY */}
+      {showOnlinePopover && (
+        <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4 animate-fade-in backdrop-blur-[1px]">
+          <div className="absolute inset-0" onClick={() => setShowOnlinePopover(false)} />
+          
+          <div className="relative bg-white rounded-2xl max-w-sm w-full p-5 border border-zinc-200 shadow-2xl animate-scale-up text-zinc-950 font-sans z-10 mx-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-zinc-150 pb-2.5 mb-4">
+              <div className="flex items-center space-x-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                </span>
+                <span className="text-xs font-mono font-black uppercase text-emerald-700 tracking-wider">
+                  Tactical Online Status ({onlineUsers.length || 1})
+                </span>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setShowOnlinePopover(false)}
+                className="hover:bg-zinc-100 p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 cursor-pointer transition"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Online users checklist container */}
+            <div className="space-y-2 max-h-60 overflow-y-auto scrollbar-thin pr-1 flex flex-col">
+              {onlineUsers.length === 0 ? (
+                <div className="flex items-center justify-between p-2 hover:bg-zinc-50 border border-zinc-100 rounded-xl transition">
+                  <div className="flex items-center space-x-2.5 min-w-0">
+                    <div className="h-7 w-7 rounded bg-zinc-950 border border-zinc-805 flex items-center justify-center text-[10px] font-mono text-amber-500 font-extrabold shrink-0">
+                      ★
+                    </div>
+                    <div className="min-w-0">
+                      <span className="block text-xs font-bold text-zinc-900 truncate">@{userName} (You)</span>
+                      <span className="block text-[8.5px] font-mono text-zinc-450 leading-none">Active • {cocRole || "Member"}</span>
+                    </div>
+                  </div>
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0 shadow-sm" />
+                </div>
+              ) : (
+                onlineUsers.map((user) => {
+                  const isCurrentUser = user.uid === userUid;
+                  return (
+                    <div 
+                      key={user.uid} 
+                      className="flex items-center justify-between p-2.5 hover:bg-zinc-50/80 border border-zinc-100 rounded-xl transition"
+                    >
+                      <div className="flex items-center space-x-2.5 min-w-0">
+                        <div className="h-7.5 w-7.5 rounded-md bg-zinc-950 border border-zinc-800 flex items-center justify-center text-[10px] font-mono text-amber-500 font-extrabold shrink-0 shadow-inner">
+                          {user.role ? user.role.substring(0, 2).toUpperCase() : "ME"}
+                        </div>
+                        <div className="min-w-0">
+                          <span className="block text-xs font-bold text-zinc-900 truncate">
+                            {user.name} {isCurrentUser && <span className="text-zinc-400 font-normal text-[10px]">(You)</span>}
+                          </span>
+                          <span className="block text-[8.5px] font-mono text-zinc-450 leading-none mt-0.5">
+                            {user.role || "Comrade"} • Active now
+                          </span>
+                        </div>
+                      </div>
+                      <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0 shadow-sm shadow-emerald-500/25" />
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="mt-4 pt-3 border-t border-zinc-150 flex justify-between items-center text-[8.5px] font-mono text-zinc-450 uppercase tracking-widest">
+              <span>🔒 Encrypted session</span>
+              <span>Central Synced</span>
             </div>
           </div>
         </div>

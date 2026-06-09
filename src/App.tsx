@@ -2855,19 +2855,21 @@ export default function App() {
       />
 
       {/* Authentic 3D Floating Embers Effect overlay background */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-10">
-        {[...Array(15)].map((_, i) => (
-          <div
-            key={i}
-            className="coc-ember"
-            style={{
-              left: `${(i * 7) % 100}%`,
-              animationDelay: `${i * 1.1}s`,
-              animationDuration: `${12 + (i % 6) * 2}s`,
-            }}
-          />
-        ))}
-      </div>
+      {activeTab !== "chat" && (
+        <div className="fixed inset-0 pointer-events-none overflow-hidden z-10">
+          {[...Array(15)].map((_, i) => (
+            <div
+              key={i}
+              className="coc-ember"
+              style={{
+                left: `${(i * 7) % 100}%`,
+                animationDelay: `${i * 1.1}s`,
+                animationDuration: `${12 + (i % 6) * 2}s`,
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Esports Footer credits */}
       {activeTab === "hq" && (
