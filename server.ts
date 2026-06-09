@@ -8,11 +8,54 @@ import https from "https";
 import webpush from "web-push";
 import clanData from "./clanData.json";
 
+// Import Firebase core capabilities for serverless database preservation
+import { initializeApp as initFirebaseApp } from "firebase/app";
+import { 
+  getFirestore as getFirebaseFirestore, 
+  collection as fCollection, 
+  getDocs as fGetDocs, 
+  setDoc as fSetDoc, 
+  getDoc as fGetDoc,
+  doc as fDoc, 
+  deleteDoc as fDeleteDoc, 
+  query as fQuery, 
+  where as fWhere 
+} from "firebase/firestore";
+
 // Enable DNS caching or lookups to prevent transient errors
 dns.setDefaultResultOrder("ipv4first");
 
 const app = express();
 const PORT = 3000;
+
+// Load Firebase configuration for Serverless state persistence
+let firebaseConfig: any = null;
+try {
+  const configRaw = fs.readFileSync(path.join(process.cwd(), "firebase-applet-config.json"), "utf-8");
+  firebaseConfig = JSON.parse(configRaw);
+} catch (e) {
+  console.error("Failed to load firebase-applet-config.json for Server:", e);
+}
+
+let serverDb: any = null;
+if (firebaseConfig) {
+  try {
+    const fConfig = {
+      apiKey: process.env.VITE_FIREBASE_API_KEY || firebaseConfig.apiKey,
+      authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseConfig.authDomain,
+      projectId: process.env.VITE_FIREBASE_PROJECT_ID || firebaseConfig.projectId,
+      storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseConfig.storageBucket,
+      messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseConfig.messagingSenderId,
+      appId: process.env.VITE_FIREBASE_APP_ID || firebaseConfig.appId,
+    };
+    const dbId = process.env.VITE_FIREBASE_DATABASE_ID || firebaseConfig.firestoreDatabaseId || "(default)";
+    const fApp = initFirebaseApp(fConfig, "server-app");
+    serverDb = getFirebaseFirestore(fApp, dbId);
+    console.log("🔥 [Server Firebase] Initialized custom server connection for database ID:", dbId);
+  } catch (err) {
+    console.error("❌ Failed to initialize server-level Firebase connection:", err);
+  }
+}
 
 app.use(express.json({ limit: "10mb" }));
 
@@ -950,52 +993,11 @@ const DEFAULT_VAPID_PUBLIC_KEY = "BPiuU0uS-HwKNyXmj6atyzhXmcRn3AHhcGyT_FF2stg-W9
 let vapidPublicKey = process.env.VAPID_PUBLIC_KEY || "";
 let vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || "";
 
-const CONFIG_PATH = path.join(process.cwd(), "push_config.json");
+const CONFIG_PATH = path.join(process.env.VERCEL ? "/tmp" : process.cwd(), "push_config.json");
+const SUB_PATH = path.join(process.env.VERCEL ? "/tmp" : process.cwd(), "push_subscriptions.json");
 
-// Read or generate key pairs if not set in environment
-if (!vapidPublicKey || !vapidPrivateKey) {
-  if (fs.existsSync(CONFIG_PATH)) {
-    try {
-      const config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8"));
-      vapidPublicKey = config.publicKey;
-      vapidPrivateKey = config.privateKey;
-    } catch (e) {
-      console.error("Failed to read public/private push configurations:", e);
-    }
-  }
-}
-
-if (!vapidPublicKey || !vapidPrivateKey) {
-  try {
-    // Generate a fresh key pair
-    const keys = webpush.generateVAPIDKeys();
-    vapidPublicKey = keys.publicKey;
-    vapidPrivateKey = keys.privateKey;
-    fs.writeFileSync(CONFIG_PATH, JSON.stringify({ publicKey: vapidPublicKey, privateKey: vapidPrivateKey }, null, 2));
-    console.log("🔥 [Web Push] Generated dynamic web-push VAPID key pair because none was specified in .env.");
-  } catch (err) {
-    console.error("Failed to generate VAPID keys:", err);
-  }
-}
-
-// Ensure VAPID configurations are armed
-if (vapidPublicKey && vapidPrivateKey) {
-  try {
-    webpush.setVapidDetails(
-      "mailto:hq@nothumans.com",
-      vapidPublicKey,
-      vapidPrivateKey
-    );
-    console.log("🚀 [Web Push] VAPID details initialized successfully. Active Public Key:", vapidPublicKey);
-  } catch (err: any) {
-    console.error("Failed to initialize VAPID details:", err.message);
-  }
-}
-
-// Subscriptions persistence
-const SUB_PATH = path.join(process.cwd(), "push_subscriptions.json");
-
-function readSubscriptions(): Record<string, any[]> {
+// Local fallback routines
+function readLocalSubscriptions(): Record<string, any[]> {
   if (fs.existsSync(SUB_PATH)) {
     try {
       return JSON.parse(fs.readFileSync(SUB_PATH, "utf-8"));
@@ -1006,22 +1008,56 @@ function readSubscriptions(): Record<string, any[]> {
   return {};
 }
 
-function saveSubscription(userUid: string, subscription: any) {
-  const subs = readSubscriptions();
+function saveLocalSubscription(userUid: string, subscription: any) {
+  const subs = readLocalSubscriptions();
   if (!subs[userUid]) {
     subs[userUid] = [];
   }
-  // Avoid duplicating identical endpoints for same user
   const alreadyExists = subs[userUid].some((s: any) => s.endpoint === subscription.endpoint);
   if (!alreadyExists) {
     subs[userUid].push(subscription);
-    fs.writeFileSync(SUB_PATH, JSON.stringify(subs, null, 2));
-    console.log(`📡 [Web Push] Added subscription for user: ${userUid}`);
+    try {
+      fs.writeFileSync(SUB_PATH, JSON.stringify(subs, null, 2));
+    } catch (err) {
+      console.warn("⚠️ Local write error:", err);
+    }
   }
 }
 
-function removeSubscription(endpoint: string) {
-  const subs = readSubscriptions();
+// Unified Firestore + JSON File subscription states
+async function saveSubscription(userUid: string, subscription: any) {
+  if (serverDb) {
+    try {
+      const safeId = Buffer.from(subscription.endpoint).toString("base64").replace(/=/g, "").replace(/\//g, "_").replace(/\+/g, "-");
+      const docRef = fDoc(serverDb, "push_subscriptions", safeId);
+      await fSetDoc(docRef, {
+        userUid,
+        subscription,
+        endpoint: subscription.endpoint,
+        updatedAt: new Date().toISOString()
+      });
+      console.log(`🔥 [Server Firestore] Push channel synced in database for Master's warrior: ${userUid}`);
+      return;
+    } catch (err) {
+      console.error("❌ Firestore subscription save failed, resorting to local fallback:", err);
+    }
+  }
+  saveLocalSubscription(userUid, subscription);
+}
+
+async function removeSubscription(endpoint: string) {
+  if (serverDb) {
+    try {
+      const safeId = Buffer.from(endpoint).toString("base64").replace(/=/g, "").replace(/\//g, "_").replace(/\+/g, "-");
+      const docRef = fDoc(serverDb, "push_subscriptions", safeId);
+      await fDeleteDoc(docRef);
+      console.log(`🔥 [Server Firestore] Purged dead push document: ${safeId}`);
+    } catch (err) {
+      console.error("❌ Failed to purge Firestore subscription document:", err);
+    }
+  }
+
+  const subs = readLocalSubscriptions();
   let changed = false;
   for (const uid in subs) {
     const originalLength = subs[uid].length;
@@ -1034,9 +1070,48 @@ function removeSubscription(endpoint: string) {
     }
   }
   if (changed) {
-    fs.writeFileSync(SUB_PATH, JSON.stringify(subs, null, 2));
-    console.log("🧹 [Web Push] Purged outdated or invalid push endpoint");
+    try {
+      fs.writeFileSync(SUB_PATH, JSON.stringify(subs, null, 2));
+    } catch (err) {
+      console.warn("⚠️ Local write error during purge:", err);
+    }
   }
+}
+
+async function getActiveSubscriptions(): Promise<Record<string, any[]>> {
+  const allSubs: Record<string, any[]> = {};
+  if (serverDb) {
+    try {
+      const q = fQuery(fCollection(serverDb, "push_subscriptions"));
+      const snapshot = await fGetDocs(q);
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data && data.userUid && data.subscription) {
+          if (!allSubs[data.userUid]) {
+            allSubs[data.userUid] = [];
+          }
+          allSubs[data.userUid].push(data.subscription);
+        }
+      });
+      
+      const local = readLocalSubscriptions();
+      for (const uid in local) {
+        if (!allSubs[uid]) {
+          allSubs[uid] = [];
+        }
+        local[uid].forEach((lSub) => {
+          const exists = allSubs[uid].some((s: any) => s.endpoint === lSub.endpoint);
+          if (!exists) {
+            allSubs[uid].push(lSub);
+          }
+        });
+      }
+      return allSubs;
+    } catch (err) {
+      console.error("❌ Firestore read failed, using local fallback only:", err);
+    }
+  }
+  return readLocalSubscriptions();
 }
 
 // API Endpoints for push notifications
@@ -1044,59 +1119,138 @@ app.get("/api/push/config", (req, res) => {
   return res.json({ publicKey: vapidPublicKey || DEFAULT_VAPID_PUBLIC_KEY });
 });
 
-app.post("/api/push/subscribe", (req, res) => {
+app.post("/api/push/subscribe", async (req, res) => {
   const { userUid, subscription } = req.body;
   if (!userUid || !subscription) {
     return res.status(400).json({ error: "Missing userUid or subscription body, Master." });
   }
-  saveSubscription(userUid, subscription);
-  return res.json({ success: true, message: "Subscription configured successfully." });
+  try {
+    await saveSubscription(userUid, subscription);
+    return res.json({ success: true, message: "Subscription configured successfully." });
+  } catch (err: any) {
+    console.error("Subscription endpoint failed:", err);
+    return res.status(500).json({ error: "Failed to persist subscription: " + err.message });
+  }
 });
 
 app.post("/api/push/send", async (req, res) => {
   const { title, message, linkToTab, room, excludeUserUid } = req.body;
 
-  // If this message belongs to the silent channel, block notifications entirely!
   if (room === "silent") {
     console.log("🔕 [Web Push] Skipped sending notification because the event belongs to silent room.");
     return res.json({ success: true, message: "Notification skipped for silent room." });
   }
 
-  const subs = readSubscriptions();
-  const payload = JSON.stringify({
-    title: title || "NOT HUMANS Command Center",
-    body: message || "New tactical payload delivered.",
-    data: {
-      url: linkToTab ? `/?tab=${linkToTab}` : "/"
-    }
-  });
-
-  const sendPromises: Promise<any>[] = [];
-
-  for (const uid in subs) {
-    if (excludeUserUid && uid === excludeUserUid) {
-      continue; // Skip the message author
-    }
-
-    subs[uid].forEach((sub: any) => {
-      const p = webpush.sendNotification(sub, payload)
-        .catch((err: any) => {
-          console.error(`Error delivering push to ${uid}:`, err.message);
-          // If expired or unreachable, clean it
-          if (err.statusCode === 410 || err.statusCode === 404) {
-            removeSubscription(sub.endpoint);
-          }
-        });
-      sendPromises.push(p);
+  try {
+    const subs = await getActiveSubscriptions();
+    const payload = JSON.stringify({
+      title: title || "NOT HUMANS Command Center",
+      body: message || "New tactical payload delivered.",
+      data: {
+        url: linkToTab ? `/?tab=${linkToTab}` : "/"
+      }
     });
-  }
 
-  await Promise.all(sendPromises);
-  return res.json({ success: true, subscribersNotified: sendPromises.length });
+    const sendPromises: Promise<any>[] = [];
+
+    for (const uid in subs) {
+      if (excludeUserUid && uid === excludeUserUid) {
+        continue; // Skip the message author
+      }
+
+      subs[uid].forEach((sub: any) => {
+        const p = webpush.sendNotification(sub, payload)
+          .catch((err: any) => {
+            console.error(`Error delivering push to ${uid}:`, err.message);
+            if (err.statusCode === 410 || err.statusCode === 404) {
+              removeSubscription(sub.endpoint);
+            }
+          });
+        sendPromises.push(p);
+      });
+    }
+
+    await Promise.all(sendPromises);
+    return res.json({ success: true, subscribersNotified: sendPromises.length });
+  } catch (err: any) {
+    console.error("Failed executing notification broadcasting broker:", err);
+    return res.status(500).json({ error: err.message });
+  }
 });
 
 // Configure Vite and static assets
 async function startServer() {
+  // Retrieve or generate persistent VAPID keys using Firestore (enabling true Serverless stability)
+  if (!vapidPublicKey || !vapidPrivateKey) {
+    if (serverDb) {
+      try {
+        const configDocRef = fDoc(serverDb, "system_config", "webpipe_push_config");
+        const docSnap = await fGetDoc(configDocRef);
+        if (docSnap.exists()) {
+          const configData = docSnap.data();
+          vapidPublicKey = configData.publicKey;
+          vapidPrivateKey = configData.privateKey;
+          console.log("🔥 [Server Firestore] Shared VAPID keys fetched from database successfully!");
+        } else {
+          const keys = webpush.generateVAPIDKeys();
+          vapidPublicKey = keys.publicKey;
+          vapidPrivateKey = keys.privateKey;
+          await fSetDoc(configDocRef, {
+            publicKey: vapidPublicKey,
+            privateKey: vapidPrivateKey,
+            generatedAt: new Date().toISOString()
+          });
+          console.log("🔥 [Server Firestore] Generated and saved a new shared VAPID key pair inside Firestore!");
+        }
+      } catch (err) {
+        console.error("❌ Firestore VAPID key exchange failed, falling back to local files:", err);
+      }
+    }
+
+    // Standard file-based fallback if Firestore-based keys could not be resolved
+    if (!vapidPublicKey || !vapidPrivateKey) {
+      if (fs.existsSync(CONFIG_PATH)) {
+        try {
+          const config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8"));
+          vapidPublicKey = config.publicKey;
+          vapidPrivateKey = config.privateKey;
+        } catch (e) {
+          console.error("Failed to read public/private push configurations from file:", e);
+        }
+      }
+    }
+
+    if (!vapidPublicKey || !vapidPrivateKey) {
+      try {
+        const keys = webpush.generateVAPIDKeys();
+        vapidPublicKey = keys.publicKey;
+        vapidPrivateKey = keys.privateKey;
+        try {
+          fs.writeFileSync(CONFIG_PATH, JSON.stringify({ publicKey: vapidPublicKey, privateKey: vapidPrivateKey }, null, 2));
+          console.log("🔥 [Web Push Fallback] Generated and written VAPID keys on local fallback.");
+        } catch (writeErr) {
+          console.warn("⚠️ Could not write configurations to local path:", writeErr);
+        }
+      } catch (err) {
+        console.error("Failed to generate fallback VAPID keys in startServer:", err);
+      }
+    }
+  }
+
+  // Ensure VAPID configurations are armed
+  if (vapidPublicKey && vapidPrivateKey) {
+    try {
+      webpush.setVapidDetails(
+        "mailto:hq@nothumans.com",
+        vapidPublicKey,
+        vapidPrivateKey
+      );
+      console.log("🚀 [Web Push Engine] VAPID details initialized successfully. Active Public Key:", vapidPublicKey);
+    } catch (err: any) {
+      console.error("Failed to initialize VAPID details on startup:", err.message);
+    }
+  }
+
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },

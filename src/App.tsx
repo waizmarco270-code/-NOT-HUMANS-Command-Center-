@@ -103,11 +103,17 @@ export default function App() {
   useEffect(() => {
     // 1. Register the Service Worker in production/Vercel or development
     if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
+      const registerSW = () => {
         navigator.serviceWorker.register("/sw.js")
           .then((reg) => console.log("[Service Worker] Online at Scope:", reg.scope))
           .catch((err) => console.warn("[Service Worker] Offline fallback activated:", err));
-      });
+      };
+      
+      if (document.readyState === "complete" || document.readyState === "interactive") {
+        registerSW();
+      } else {
+        window.addEventListener("load", registerSW);
+      }
     }
 
     // 2. Intercept beforeinstallprompt
