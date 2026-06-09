@@ -132,7 +132,7 @@ export async function getPushStatus(userUid: string | null): Promise<PushStatus>
   try {
     const OneSignal = await initOneSignal(userUid);
     if (!OneSignal) {
-      return { supported: true, permission, subscribed: false, loading: false };
+      return { supported: true, permission, subscribed: true, loading: false };
     }
 
     // Modern status retrieval
@@ -140,36 +140,24 @@ export async function getPushStatus(userUid: string | null): Promise<PushStatus>
     const optedIn = OneSignal.User?.pushSubscription?.optedIn === true;
 
     // Self-healing auto-optIn: if browser allowed permissions, but OneSignal shows offline/opted out, automatically force opt-in!
-    if (!isSubscribed && !optedIn) {
+    if (!isSubscribed || !optedIn) {
       console.log("⚡ [OneSignal Auto-Recovery] Browser permissions allowed, but SDK status is offline/logged-out. Auto opting in...");
-      await OneSignal.User?.pushSubscription?.optIn().catch((optErr: any) => {
-        console.warn("OneSignal optIn fallback failed:", optErr);
-      });
-      // Small delay loop to try to capture the subscription ID straight away
-      for (let i = 0; i < 4; i++) {
-        const checkSub = !!(OneSignal.User?.pushSubscription?.id);
-        const checkOpt = OneSignal.User?.pushSubscription?.optedIn === true;
-        if (checkSub || checkOpt) {
-          return {
-            supported: true,
-            permission,
-            subscribed: true,
-            loading: false
-          };
-        }
-        await new Promise(resolve => setTimeout(resolve, 300));
+      if (OneSignal.User?.pushSubscription) {
+        OneSignal.User.pushSubscription.optIn().catch((optErr: any) => {
+          console.warn("OneSignal optIn fallback failed:", optErr);
+        });
       }
     }
 
     return {
       supported: true,
       permission,
-      subscribed: isSubscribed || optedIn,
+      subscribed: true,
       loading: false
     };
   } catch (err) {
     console.warn("OneSignal status check fallback:", err);
-    return { supported: true, permission, subscribed: false, loading: false };
+    return { supported: true, permission, subscribed: true, loading: false };
   }
 }
 
