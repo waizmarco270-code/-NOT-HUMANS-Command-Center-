@@ -11,6 +11,7 @@ export interface PushStatus {
 }
 
 let scriptLoadedPromise: Promise<void> | null = null;
+let initPromise: Promise<any> | null = null;
 
 function loadOneSignalScript(): Promise<void> {
   if (scriptLoadedPromise) return scriptLoadedPromise;
@@ -48,6 +49,75 @@ export async function checkPushSupport(): Promise<boolean> {
   );
 }
 
+/**
+ * Robust OneSignal initialization cache.
+ * Ensures the SDK is only initialized once and listens to active subscription state transitions.
+ */
+export async function initOneSignal(userUid?: string | null): Promise<any> {
+  if (initPromise) {
+    if (userUid) {
+      try {
+        const OneSignal = (window as any).OneSignal;
+        if (OneSignal && OneSignal.User) {
+          await OneSignal.login(userUid);
+        }
+      } catch (err) {
+        console.warn("Error logging in during existing OneSignal session:", err);
+      }
+    }
+    return initPromise;
+  }
+
+  initPromise = (async () => {
+    await loadOneSignalScript();
+    const OneSignal = (window as any).OneSignal;
+    if (!OneSignal) {
+      console.warn("⚠️ OneSignal SDK script loaded but object not found in window.");
+      return null;
+    }
+
+    const appId = (import.meta as any).env.VITE_ONESIGNAL_APP_ID;
+    if (!appId) {
+      console.warn("⚠️ VITE_ONESIGNAL_APP_ID environment variable is missing.");
+      return null;
+    }
+
+    try {
+      await OneSignal.init({
+        appId: appId,
+        allowLocalhostAsSecureOrigin: true,
+        notifyButton: {
+          enable: false,
+        },
+      });
+
+      console.log("🔥 [OneSignal SDK] Ready with App ID:", appId);
+
+      // Register responsive subscriber level transitions
+      OneSignal.User?.pushSubscription?.addEventListener("change", (event: any) => {
+        console.log("🔥 [OneSignal Event] State change detected:", event?.current);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("onesignal-subscription-changed", { detail: event?.current }));
+        }
+      });
+
+      if (userUid) {
+        await OneSignal.login(userUid);
+        console.log(`🔥 [OneSignal User Logged] Session key: ${userUid}`);
+      }
+
+      return OneSignal;
+    } catch (err) {
+      console.error("❌ OneSignal SDK init failed:", err);
+      // Reset promise to let next attempts retry if necessary
+      initPromise = null;
+      return null;
+    }
+  })();
+
+  return initPromise;
+}
+
 export async function getPushStatus(userUid: string | null): Promise<PushStatus> {
   const isSupported = await checkPushSupport();
   if (!isSupported) {
@@ -60,17 +130,19 @@ export async function getPushStatus(userUid: string | null): Promise<PushStatus>
   }
 
   try {
-    await loadOneSignalScript();
-    const OneSignal = (window as any).OneSignal;
+    const OneSignal = await initOneSignal(userUid);
     if (!OneSignal) {
       return { supported: true, permission, subscribed: false, loading: false };
     }
 
-    const isSubscribed = OneSignal.User?.pushSubscription?.id ? true : false;
+    // Modern status retrieval
+    const isSubscribed = !!(OneSignal.User?.pushSubscription?.id);
+    const optedIn = OneSignal.User?.pushSubscription?.optedIn === true;
+
     return {
       supported: true,
       permission,
-      subscribed: isSubscribed,
+      subscribed: isSubscribed || optedIn,
       loading: false
     };
   } catch (err) {
@@ -87,29 +159,9 @@ export async function subscribeToPushNotifications(userUid: string): Promise<boo
   }
 
   try {
-    await loadOneSignalScript();
-    const OneSignal = (window as any).OneSignal;
+    const OneSignal = await initOneSignal(userUid);
     if (!OneSignal) {
-      throw new Error("OneSignal SDK failed to load.");
-    }
-
-    const appId = (import.meta as any).env.VITE_ONESIGNAL_APP_ID;
-    if (!appId) {
-      throw new Error("VITE_ONESIGNAL_APP_ID is not set in environment.");
-    }
-
-    // Call init first if not done
-    await OneSignal.init({
-      appId: appId,
-      allowLocalhostAsSecureOrigin: true,
-      notifyButton: {
-        enable: false,
-      },
-    });
-
-    if (userUid) {
-      await OneSignal.login(userUid);
-      console.log(`🔥 [OneSignal] Logged in user: ${userUid}`);
+      throw new Error("OneSignal SDK could not be initialized.");
     }
 
     // Modern v16 requestPermission
@@ -119,6 +171,15 @@ export async function subscribeToPushNotifications(userUid: string): Promise<boo
     if (Notification.permission !== "granted") {
       console.warn("Permission was not granted by the user.");
       return false;
+    }
+
+    // Force sub sync
+    if (OneSignal.User?.pushSubscription) {
+      try {
+        await OneSignal.User.pushSubscription.optIn();
+      } catch (optErr) {
+        console.warn("Attempted optIn fallback error:", optErr);
+      }
     }
 
     console.log("🔥 [OneSignal] Channel subscribed successfully under userUid:", userUid);

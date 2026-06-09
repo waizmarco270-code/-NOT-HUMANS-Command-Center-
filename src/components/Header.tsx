@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Shield, LogIn, LogOut, Terminal, Award, User, Info, Menu, Bell, Check, Trash2 } from "lucide-react";
 import { User as FirebaseUser } from "firebase/auth";
 import { CoCRole } from "../types";
-import { getPushStatus, subscribeToPushNotifications, PushStatus } from "../pushHelper";
+import { getPushStatus, subscribeToPushNotifications, PushStatus, initOneSignal } from "../pushHelper";
 
 interface HeaderProps {
   user: FirebaseUser | null;
@@ -77,6 +77,25 @@ export default function Header({
     setPushStatus(s);
   };
 
+  // Proactively initialize OneSignal on app load and bind reactive subscription change listeners
+  useEffect(() => {
+    if (!user) return;
+
+    initOneSignal(user.uid).then(() => {
+      syncPushStatus();
+    });
+
+    const handleSubChange = () => {
+      console.log("📡 [Header Sync] Capture OneSignal Subscription state change.");
+      syncPushStatus();
+    };
+
+    window.addEventListener("onesignal-subscription-changed", handleSubChange);
+    return () => {
+      window.removeEventListener("onesignal-subscription-changed", handleSubChange);
+    };
+  }, [user]);
+
   useEffect(() => {
     if (user && showNotifDropdown) {
       syncPushStatus();
@@ -88,7 +107,10 @@ export default function Header({
     setPushStatus(prev => ({ ...prev, loading: true }));
     const success = await subscribeToPushNotifications(user.uid);
     if (success) {
-      await syncPushStatus();
+      // Small debounce delay before updating
+      setTimeout(() => {
+        syncPushStatus();
+      }, 1000);
     } else {
       setPushStatus(prev => ({ ...prev, loading: false }));
     }
