@@ -48,13 +48,17 @@ export default function Header({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    function handleClickOutside(event: MouseEvent | TouchEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowNotifDropdown(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside, { passive: true });
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
   }, []);
 
   const unreadNotifCount = notifications.filter(n => !n.isRead).length;
@@ -72,18 +76,6 @@ export default function Header({
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-rose-950/40 bg-zinc-950/90 backdrop-blur-md">
-      {/* Legendary NOT HUMANS Esports Tactical Broadcast Strip */}
-      <div className="w-full bg-gradient-to-r from-[#170505] via-[#3a0d0d] to-[#170505] border-b border-red-900/45 py-1.5 px-4 overflow-hidden relative shadow-[0_2px_15px_rgba(239,68,68,0.12)] flex items-center justify-center">
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(239,68,68,0.03)_1px,transparent_1px)] bg-[size:8px_8px] pointer-events-none" />
-        <div className="flex items-center space-x-2 select-none">
-          <span className="text-red-500 text-[10px] sm:text-xs animate-pulse">🛡️</span>
-          <p className="font-mono text-[9px] sm:text-[10.5px] uppercase font-black tracking-widest text-[#fee2e2] text-center">
-            NOT HUMANS DIRECTIVE // <span className="text-amber-400 font-bold">LOYALTY ABOVE ALL • INTELLECT IN COMBAT • SOVEREIGN UNTIL VICTORY. #2JVQ8PUUG</span>
-          </p>
-          <span className="text-red-500 text-[10px] sm:text-xs animate-pulse">⚔️</span>
-        </div>
-      </div>
-
       <div className="mx-auto flex max-w-7xl h-16 items-center justify-between px-4 sm:px-6">
         
         {/* Esports Clan Brand Logo & Hamburg Toggle Wrapper */}
@@ -179,7 +171,7 @@ export default function Header({
               </button>
 
               {showNotifDropdown && (
-                <div className="absolute right-0 mt-2.5 w-80 sm:w-96 bg-[#0a0505] border border-red-900/40 rounded-xl shadow-[0_10px_35px_rgba(0,0,0,0.95)] p-4 text-zinc-100 font-sans max-h-[480px] overflow-y-auto scrollbar-thin">
+                <div className="absolute right-0 mt-2.5 w-80 sm:w-96 bg-[#0a0505] border border-red-900/40 rounded-xl shadow-[0_10px_35px_rgba(0,0,0,0.95)] p-4 text-zinc-100 font-sans max-h-[480px] overflow-y-auto scrollbar-thin z-[9999] pointer-events-auto">
                   <div className="flex items-center justify-between border-b border-[#2b1616] pb-2 mb-3 select-none">
                     <div className="flex items-center space-x-2">
                       <span className="text-red-500 animate-pulse">📡</span>

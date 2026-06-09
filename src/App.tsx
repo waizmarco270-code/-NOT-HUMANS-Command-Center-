@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { onAuthStateChanged, signInWithPopup, signInAnonymously, signOut, User as FirebaseUser } from "firebase/auth";
-import { doc, getDoc, setDoc, collection, onSnapshot, query, orderBy, getDocs, writeBatch, deleteDoc, where, limit } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, collection, onSnapshot, query, orderBy, getDocs, writeBatch, deleteDoc, where, limit } from "firebase/firestore";
 import { auth, db, googleProvider, handleFirestoreError, OperationType } from "./firebase";
 import { Member, CoCRole } from "./types";
 import { motion, AnimatePresence } from "motion/react";

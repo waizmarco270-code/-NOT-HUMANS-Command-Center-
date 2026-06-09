@@ -93,8 +93,9 @@ const compressAndGetBase64 = (file: File): Promise<string> => {
 
 export default function BasesSection({ userUid, userName, userEmail, cocRole }: BasesSectionProps) {
   const [bases, setBases] = useState<BaseLayout[]>([]);
-  const [activeTab, setActiveTab] = useState<"not_humans" | "public">("public");
+  const [activeTab, setActiveTab] = useState<"not_humans" | "public">("not_humans");
   const [selectedTh, setSelectedTh] = useState<number>(18); // default TH18 representation
+  const [showThSelector, setShowThSelector] = useState<boolean>(true);
 
   // Custom Town Hall backgrounds states
   const [thImages, setThImages] = useState<{ [thLevel: number]: string }>({});
@@ -711,97 +712,116 @@ export default function BasesSection({ userUid, userName, userEmail, cocRole }: 
       </div>
 
       {/* TH SELECTION ACCORDION SELECTOR */}
-      <div className="bg-[#090404] border border-[#1b0e0e] p-4 rounded-2xl">
-        <span className="block font-mono text-[9px] font-black uppercase text-amber-500/60 mb-3.5 tracking-wider">
-          SELECT TOWN HALL CATEGORY
-        </span>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
-          {TH_LEVELS.map((th) => {
-            const uploadedImg = thImages[th];
-            return (
-              <div
-                key={th}
-                onClick={() => setSelectedTh(th)}
-                style={{ 
-                  backgroundImage: uploadedImg ? `url(${uploadedImg})` : "none",
-                  backgroundSize: "cover",
-                  backgroundPosition: "center"
-                }}
-                className={`h-16 sm:h-20 rounded-xl border relative overflow-hidden transition-all duration-300 group flex items-center justify-center cursor-pointer ${
-                  selectedTh === th
-                    ? "border-amber-500 shadow-lg shadow-amber-950/45"
-                    : "border-[#1b0a0a] hover:border-red-950"
-                }`}
-              >
-                {/* Visual Underlay Overlay for Readability */}
-                <div className={`absolute inset-0 transition-colors duration-300 ${
-                  selectedTh === th 
-                    ? "bg-black/55 group-hover:bg-black/45" 
-                    : "bg-black/75 group-hover:bg-black/65"
-                }`} />
+      {showThSelector && (
+        <div className="bg-[#090404] border border-[#1b0e0e] p-4 rounded-2xl">
+          <span className="block font-mono text-[9px] font-black uppercase text-amber-500/60 mb-3.5 tracking-wider">
+            SELECT TOWN HALL CATEGORY
+          </span>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
+            {TH_LEVELS.map((th) => {
+              const uploadedImg = thImages[th];
+              return (
+                <div
+                  key={th}
+                  onClick={() => {
+                    setSelectedTh(th);
+                    setShowThSelector(false);
+                  }}
+                  style={{ 
+                    backgroundImage: uploadedImg ? `url(${uploadedImg})` : "none",
+                    backgroundSize: "cover",
+                    backgroundPosition: "center"
+                  }}
+                  className={`h-16 sm:h-20 rounded-xl border relative overflow-hidden transition-all duration-300 group flex items-center justify-center cursor-pointer ${
+                    selectedTh === th
+                      ? "border-amber-500 shadow-lg shadow-amber-950/45"
+                      : "border-[#1b0a0a] hover:border-red-950"
+                  }`}
+                >
+                  {/* Visual Underlay Overlay for Readability */}
+                  <div className={`absolute inset-0 transition-colors duration-300 ${
+                    selectedTh === th 
+                      ? "bg-black/55 group-hover:bg-black/45" 
+                      : "bg-black/75 group-hover:bg-black/65"
+                  }`} />
 
-                {/* Card Text Content */}
-                <div className="relative z-10 flex flex-col items-center justify-center text-center">
-                  <span className={`text-base font-black leading-none tracking-tight ${
-                    selectedTh === th ? "text-amber-400 group-hover:text-amber-300" : "text-zinc-150 group-hover:text-white"
-                  }`}>
-                    TH {th}
-                  </span>
-                  <span className={`text-[7px] font-bold uppercase tracking-widest mt-1 ${
-                    selectedTh === th ? "text-amber-500/70" : "text-zinc-500 group-hover:text-zinc-400"
-                  }`}>
-                    TOWN HALL
-                  </span>
-                </div>
-
-                {/* Decorative bottom indicator for state */}
-                {selectedTh === th && (
-                  <div className="absolute inset-x-0 bottom-0 h-1 bg-amber-500" />
-                )}
-
-                {/* Supreme Leader's Dedicated Upload Option */}
-                {isSupremeLeader && (
-                  <label 
-                    onClick={(e) => e.stopPropagation()} 
-                    className="absolute top-1 right-1 p-1 bg-black/80 hover:bg-black text-rose-500 hover:text-rose-450 border border-zinc-900 rounded-lg cursor-pointer opacity-0 group-hover:opacity-100 transition duration-200 z-20"
-                    title="Master, upload custom background screenshot for this Town Hall level"
-                  >
-                    <Upload className="h-3 w-3" />
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          await handleThImageUpload(th, file);
-                        }
-                      }}
-                    />
-                  </label>
-                )}
-
-                {/* Upload loading indicator spinner */}
-                {uploadingThId === th && (
-                  <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-30">
-                    <RefreshCw className="h-4 w-4 text-amber-500 animate-spin" />
+                  {/* Card Text Content */}
+                  <div className="relative z-10 flex flex-col items-center justify-center text-center">
+                    <span className={`text-base font-black leading-none tracking-tight ${
+                      selectedTh === th ? "text-amber-400 group-hover:text-amber-300" : "text-zinc-150 group-hover:text-white"
+                    }`}>
+                      TH {th}
+                    </span>
+                    <span className={`text-[7px] font-bold uppercase tracking-widest mt-1 ${
+                      selectedTh === th ? "text-amber-500/70" : "text-zinc-500 group-hover:text-zinc-400"
+                    }`}>
+                      TOWN HALL
+                    </span>
                   </div>
-                )}
-              </div>
-            );
-          })}
+
+                  {/* Decorative bottom indicator for state */}
+                  {selectedTh === th && (
+                    <div className="absolute inset-x-0 bottom-0 h-1 bg-amber-500" />
+                  )}
+
+                  {/* Supreme Leader's Dedicated Upload Option */}
+                  {isSupremeLeader && (
+                    <label 
+                      onClick={(e) => e.stopPropagation()} 
+                      className="absolute top-1 right-1 p-1 bg-black/80 hover:bg-black text-rose-500 hover:text-rose-450 border border-zinc-900 rounded-lg cursor-pointer opacity-0 group-hover:opacity-100 transition duration-200 z-20"
+                      title="Master, upload custom background screenshot for this Town Hall level"
+                    >
+                      <Upload className="h-3 w-3" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            await handleThImageUpload(th, file);
+                          }
+                        }}
+                      />
+                    </label>
+                  )}
+
+                  {/* Upload loading indicator spinner */}
+                  {uploadingThId === th && (
+                    <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-30">
+                      <RefreshCw className="h-4 w-4 text-amber-500 animate-spin" />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* MAIN CARDS LIST & VAULT LOGIC GATE */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key="grid-pane"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="space-y-4"
-        >
+      {!showThSelector && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#211111] pb-4">
+            <button
+              onClick={() => setShowThSelector(true)}
+              className="flex items-center space-x-2 px-4 py-2.5 border border-red-900/60 bg-[#160a0a]/95 hover:bg-[#2c1212] text-red-100 hover:text-white font-mono text-[10.5px] font-black uppercase tracking-widest rounded-lg transition duration-200 cursor-pointer active:scale-95 shadow-[0_0_15px_rgba(239,68,68,0.12)] self-start"
+            >
+              <span>← SELECT BASES OF OTHER TH</span>
+            </button>
+            <div className="px-3.5 py-1.5 rounded-lg bg-red-950/25 border border-red-900/30 text-amber-450 font-mono text-xs font-black uppercase tracking-wider self-start sm:self-auto">
+              📂 ACTIVE SECTOR: TOWN HALL {selectedTh} CONFIGURATIONS
+            </div>
+          </div>
+
+          <AnimatePresence mode="wait">
+            <motion.div
+              key="grid-pane"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              className="space-y-4"
+            >
             {filteredBases.length === 0 ? (
               
               /* EMPTY BLUEPRINT LEDGER CARD */
@@ -1070,7 +1090,9 @@ export default function BasesSection({ userUid, userName, userEmail, cocRole }: 
 
             )}
           </motion.div>
-      </AnimatePresence>
+        </AnimatePresence>
+      </div>
+    )}
 
       {/* FULL UPLOAD MODAL DIALOG POPUP */}
       <AnimatePresence>
