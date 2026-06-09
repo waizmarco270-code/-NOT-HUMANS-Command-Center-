@@ -5,6 +5,7 @@ import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { HttpsProxyAgent } from "https-proxy-agent";
 import https from "https";
+import webpush from "web-push";
 import clanData from "./clanData.json";
 
 // Enable DNS caching or lookups to prevent transient errors
@@ -940,6 +941,158 @@ app.post("/api/verify-token", async (req, res) => {
     console.error("Token verification parsing failed:", err.message);
     return res.status(500).json({ error: "Server encountered verification issues." });
   }
+});
+
+// --- WEB PUSH LOGIC AND CONFIGURATIONS (Sovereign Notification Suite) ---
+// Default user specified public key
+const DEFAULT_VAPID_PUBLIC_KEY = "BPiuU0uS-HwKNyXmj6atyzhXmcRn3AHhcGyT_FF2stg-W9bUQTS4Bhb6PUwasUp2MxM0x2Cu9mWFEohIPwiPxAk";
+
+let vapidPublicKey = process.env.VAPID_PUBLIC_KEY || "";
+let vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || "";
+
+const CONFIG_PATH = path.join(process.cwd(), "push_config.json");
+
+// Read or generate key pairs if not set in environment
+if (!vapidPublicKey || !vapidPrivateKey) {
+  if (fs.existsSync(CONFIG_PATH)) {
+    try {
+      const config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8"));
+      vapidPublicKey = config.publicKey;
+      vapidPrivateKey = config.privateKey;
+    } catch (e) {
+      console.error("Failed to read public/private push configurations:", e);
+    }
+  }
+}
+
+if (!vapidPublicKey || !vapidPrivateKey) {
+  try {
+    // Generate a fresh key pair
+    const keys = webpush.generateVAPIDKeys();
+    vapidPublicKey = keys.publicKey;
+    vapidPrivateKey = keys.privateKey;
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify({ publicKey: vapidPublicKey, privateKey: vapidPrivateKey }, null, 2));
+    console.log("🔥 [Web Push] Generated dynamic web-push VAPID key pair because none was specified in .env.");
+  } catch (err) {
+    console.error("Failed to generate VAPID keys:", err);
+  }
+}
+
+// Ensure VAPID configurations are armed
+if (vapidPublicKey && vapidPrivateKey) {
+  try {
+    webpush.setVapidDetails(
+      "mailto:hq@nothumans.com",
+      vapidPublicKey,
+      vapidPrivateKey
+    );
+    console.log("🚀 [Web Push] VAPID details initialized successfully. Active Public Key:", vapidPublicKey);
+  } catch (err: any) {
+    console.error("Failed to initialize VAPID details:", err.message);
+  }
+}
+
+// Subscriptions persistence
+const SUB_PATH = path.join(process.cwd(), "push_subscriptions.json");
+
+function readSubscriptions(): Record<string, any[]> {
+  if (fs.existsSync(SUB_PATH)) {
+    try {
+      return JSON.parse(fs.readFileSync(SUB_PATH, "utf-8"));
+    } catch {
+      return {};
+    }
+  }
+  return {};
+}
+
+function saveSubscription(userUid: string, subscription: any) {
+  const subs = readSubscriptions();
+  if (!subs[userUid]) {
+    subs[userUid] = [];
+  }
+  // Avoid duplicating identical endpoints for same user
+  const alreadyExists = subs[userUid].some((s: any) => s.endpoint === subscription.endpoint);
+  if (!alreadyExists) {
+    subs[userUid].push(subscription);
+    fs.writeFileSync(SUB_PATH, JSON.stringify(subs, null, 2));
+    console.log(`📡 [Web Push] Added subscription for user: ${userUid}`);
+  }
+}
+
+function removeSubscription(endpoint: string) {
+  const subs = readSubscriptions();
+  let changed = false;
+  for (const uid in subs) {
+    const originalLength = subs[uid].length;
+    subs[uid] = subs[uid].filter((s: any) => s.endpoint !== endpoint);
+    if (subs[uid].length !== originalLength) {
+      changed = true;
+    }
+    if (subs[uid].length === 0) {
+      delete subs[uid];
+    }
+  }
+  if (changed) {
+    fs.writeFileSync(SUB_PATH, JSON.stringify(subs, null, 2));
+    console.log("🧹 [Web Push] Purged outdated or invalid push endpoint");
+  }
+}
+
+// API Endpoints for push notifications
+app.get("/api/push/config", (req, res) => {
+  return res.json({ publicKey: vapidPublicKey || DEFAULT_VAPID_PUBLIC_KEY });
+});
+
+app.post("/api/push/subscribe", (req, res) => {
+  const { userUid, subscription } = req.body;
+  if (!userUid || !subscription) {
+    return res.status(400).json({ error: "Missing userUid or subscription body, Master." });
+  }
+  saveSubscription(userUid, subscription);
+  return res.json({ success: true, message: "Subscription configured successfully." });
+});
+
+app.post("/api/push/send", async (req, res) => {
+  const { title, message, linkToTab, room, excludeUserUid } = req.body;
+
+  // If this message belongs to the silent channel, block notifications entirely!
+  if (room === "silent") {
+    console.log("🔕 [Web Push] Skipped sending notification because the event belongs to silent room.");
+    return res.json({ success: true, message: "Notification skipped for silent room." });
+  }
+
+  const subs = readSubscriptions();
+  const payload = JSON.stringify({
+    title: title || "NOT HUMANS Command Center",
+    body: message || "New tactical payload delivered.",
+    data: {
+      url: linkToTab ? `/?tab=${linkToTab}` : "/"
+    }
+  });
+
+  const sendPromises: Promise<any>[] = [];
+
+  for (const uid in subs) {
+    if (excludeUserUid && uid === excludeUserUid) {
+      continue; // Skip the message author
+    }
+
+    subs[uid].forEach((sub: any) => {
+      const p = webpush.sendNotification(sub, payload)
+        .catch((err: any) => {
+          console.error(`Error delivering push to ${uid}:`, err.message);
+          // If expired or unreachable, clean it
+          if (err.statusCode === 410 || err.statusCode === 404) {
+            removeSubscription(sub.endpoint);
+          }
+        });
+      sendPromises.push(p);
+    });
+  }
+
+  await Promise.all(sendPromises);
+  return res.json({ success: true, subscribersNotified: sendPromises.length });
 });
 
 // Configure Vite and static assets

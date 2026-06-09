@@ -13,6 +13,7 @@ import {
 } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../firebase";
 import { BaseLayout, CoCRole } from "../types";
+import { sendPushNotification } from "../pushHelper";
 import { 
   Layers, 
   ShieldAlert, 
@@ -342,6 +343,14 @@ export default function BasesSection({ userUid, userName, userEmail, cocRole }: 
       };
 
       await addDoc(collection(db, "bases"), payload);
+
+      sendPushNotification({
+        title: "🏰 New Defence Layout Added",
+        message: `${userName || "Warrior"} uploaded a TH${payload.thLevel} defense layout: "${title.trim()}"!`,
+        linkToTab: "layouts",
+        excludeUserUid: userUid || undefined
+      });
+
       triggerAlert("BASE TRANSMITTED", "Success: The new defensive blueprint has been uploaded and encrypted.");
       
       // reset forms
@@ -446,6 +455,13 @@ export default function BasesSection({ userUid, userName, userEmail, cocRole }: 
 
         await addDoc(collection(db, "bases"), finalPayload);
       }
+
+      sendPushNotification({
+        title: "🏰 Multi-Layouts Imported",
+        message: `${userName || "Warrior"} imported a bulk batch of ${validatedBases.length} defense blueprints!`,
+        linkToTab: "layouts",
+        excludeUserUid: userUid || undefined
+      });
 
       triggerAlert("BULK IMPORT SECURED", `A total of ${validatedBases.length} tactical defensive configurations have been successfully decrypted and indexed.`);
       setBulkJson("");

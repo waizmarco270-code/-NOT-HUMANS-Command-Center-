@@ -120,7 +120,19 @@ export default function App() {
 
     window.addEventListener("beforeinstallprompt", handleInstallPrompt);
 
-    // 3. Track when the app gets successfully installed
+    // 3. Listen for Navigator messages from Web Push Notification clicks
+    const handleServiceWorkerMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type === "NAVIGATE") {
+        const url = new URL(event.data.url, window.location.origin);
+        const tab = url.searchParams.get("tab");
+        if (tab) {
+          setActiveTab(tab as any);
+        }
+      }
+    };
+    navigator.serviceWorker?.addEventListener?.("message", handleServiceWorkerMessage);
+
+    // 4. Track when the app gets successfully installed
     const handleAppInstalled = () => {
       setIsInstallable(false);
       setDeferredPrompt(null);
@@ -131,6 +143,7 @@ export default function App() {
     return () => {
       window.removeEventListener("beforeinstallprompt", handleInstallPrompt);
       window.removeEventListener("appinstalled", handleAppInstalled);
+      navigator.serviceWorker?.removeEventListener?.("message", handleServiceWorkerMessage);
     };
   }, []);
 
@@ -250,7 +263,7 @@ export default function App() {
   // Track last read ticks of each chat room/channel, persisted in localStorage
   const [lastReadTimes, setLastReadTimes] = useState<Record<string, number>>(() => {
     const map: Record<string, number> = {};
-    const rooms = ["general", "war", "layouts", "polls", "announcements"];
+    const rooms = ["general", "war", "layouts", "polls", "announcements", "silent"];
     const cachedUser = localStorage.getItem("nh_last_logged_in_uid") || "guest";
     rooms.forEach(room => {
       const stored = localStorage.getItem(`lastReadTime_${cachedUser}_${room}`);
@@ -281,7 +294,7 @@ export default function App() {
   // Keep lastReadTimes synchronized with current loaded user
   useEffect(() => {
     if (user) {
-      const rooms = ["general", "war", "layouts", "polls", "announcements"];
+      const rooms = ["general", "war", "layouts", "polls", "announcements", "silent"];
       setLastReadTimes(prev => {
         const nextMap = { ...prev };
         rooms.forEach(room => {

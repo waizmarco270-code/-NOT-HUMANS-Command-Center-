@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Shield, LogIn, LogOut, Terminal, Award, User, Info, Menu, Bell, Check, Trash2 } from "lucide-react";
 import { User as FirebaseUser } from "firebase/auth";
 import { CoCRole } from "../types";
+import { getPushStatus, subscribeToPushNotifications, PushStatus } from "../pushHelper";
 
 interface HeaderProps {
   user: FirebaseUser | null;
@@ -62,6 +63,36 @@ export default function Header({
   }, []);
 
   const unreadNotifCount = notifications.filter(n => !n.isRead).length;
+
+  const [pushStatus, setPushStatus] = useState<PushStatus>({
+    supported: false,
+    permission: "default",
+    subscribed: false,
+    loading: true
+  });
+
+  const syncPushStatus = async () => {
+    if (!user) return;
+    const s = await getPushStatus(user.uid);
+    setPushStatus(s);
+  };
+
+  useEffect(() => {
+    if (user && showNotifDropdown) {
+      syncPushStatus();
+    }
+  }, [user, showNotifDropdown]);
+
+  const handleTogglePush = async () => {
+    if (!user) return;
+    setPushStatus(prev => ({ ...prev, loading: true }));
+    const success = await subscribeToPushNotifications(user.uid);
+    if (success) {
+      await syncPushStatus();
+    } else {
+      setPushStatus(prev => ({ ...prev, loading: false }));
+    }
+  };
 
   const navItems = [
     { id: "hq", label: "HQ", icon: Shield },
@@ -204,6 +235,51 @@ export default function Header({
                       )}
                     </div>
                   </div>
+
+                  {/* Web Push Subscriber Controller (Master's Special Request) */}
+                  {pushStatus.supported && (
+                    <div className="mb-3 p-2.5 bg-[#170a0a] border border-red-955/40 rounded-lg flex flex-col space-y-1.5 select-none shrink-0 shadow-inner">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] font-mono font-black text-[#e2a8a8] tracking-wider uppercase flex items-center gap-1">
+                          ⚡ Device Sync Channels:
+                        </span>
+                        {pushStatus.loading ? (
+                          <span className="text-[8px] font-mono text-zinc-500 animate-pulse">Calibrating...</span>
+                        ) : pushStatus.subscribed ? (
+                          <span className="text-[8px] font-mono text-emerald-400 font-extrabold bg-emerald-950/50 border border-emerald-900/30 px-1.5 py-0.2 rounded flex items-center gap-1 select-none">
+                            <span className="h-1 w-1 bg-emerald-400 rounded-full animate-pulse"></span> Live Link
+                          </span>
+                        ) : pushStatus.permission === "denied" ? (
+                          <span className="text-[8px] font-mono text-rose-400 font-bold bg-rose-950/40 border border-rose-900/40 px-1.5 py-0.2 rounded">Blocked</span>
+                        ) : (
+                          <span className="text-[8px] font-mono text-zinc-400">Offline</span>
+                        )}
+                      </div>
+                      
+                      {pushStatus.subscribed ? (
+                        <p className="text-[9px] text-zinc-400 font-sans leading-normal">
+                          Master, Web Push notifications are active. You will receive tactical updates in real-time even when offline.
+                        </p>
+                      ) : pushStatus.permission === "denied" ? (
+                        <p className="text-[9px] text-zinc-500 font-sans leading-normal">
+                          Alert permissions blocked, Master. Please reset notifications permission in your browser bar to enable server push syncs.
+                        </p>
+                      ) : (
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-[9px] text-zinc-400 font-sans leading-normal">
+                            Enable browser-level native notifications to stream chat messages, strategy maps & clan alerts on this device.
+                          </p>
+                          <button
+                            onClick={handleTogglePush}
+                            disabled={pushStatus.loading}
+                            className="bg-red-950 hover:bg-red-900 text-red-200 font-mono text-[9px] py-1.5 px-2 rounded-md font-bold uppercase transition border border-red-800 disabled:opacity-50 flex items-center justify-center gap-1 cursor-pointer active:scale-98 shadow shadow-black/40"
+                          >
+                            🚀 Activate Native Push Alerts
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <div className="space-y-1.5 max-h-[360px] overflow-y-auto scrollbar-thin pr-1">
                     {notifications.length === 0 ? (

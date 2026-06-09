@@ -3,6 +3,7 @@ import { collection, onSnapshot, query, orderBy, addDoc, serverTimestamp, delete
 import { db, handleFirestoreError, OperationType } from "../firebase";
 import { StrategyGuide, CoCRole } from "../types";
 import { BookOpen, Filter, Plus, Link, Trash2, Video, Eye, Send, Upload, Image, X } from "lucide-react";
+import { sendPushNotification } from "../pushHelper";
 
 interface StrategySectionProps {
   userUid: string | null;
@@ -165,6 +166,13 @@ export default function StrategySection({ userUid, userName, cocRole }: Strategy
         authorUid: userUid || "",
         authorName: userName,
         createdAt: serverTimestamp()
+      });
+
+      sendPushNotification({
+        title: "🧠 Battle Strategy Published",
+        message: `New strategy "${title.trim()}" authored by ${userName}!`,
+        linkToTab: "strategies",
+        excludeUserUid: userUid || undefined
       });
 
       // Clear states

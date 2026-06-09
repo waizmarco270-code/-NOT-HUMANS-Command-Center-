@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../firebase";
 import { ChatMessage, CoCRole, Member } from "../types";
+import { sendPushNotification } from "../pushHelper";
 import { 
   Send, 
   Pin, 
@@ -66,7 +67,8 @@ const CHANNELS = [
   { id: "general", name: "# 💬-general-chat", label: "General Chat", description: "Standard tactical talks with squad", restricted: false },
   { id: "war", name: "# ⚔️-war-coordination", label: "War Room", description: "Attack coordinates, base assignments & plan syncs", restricted: false },
   { id: "layouts", name: "# 🏰-base-layouts", label: "Defence Layouts", description: "Post and copy elite defense strategies", restricted: false },
-  { id: "polls", name: "# 📊-strategic-polls", label: "Tactical Polls", description: "Deploy surveys for active deployment plans", restricted: false }
+  { id: "polls", name: "# 📊-strategic-polls", label: "Tactical Polls", description: "Deploy surveys for active deployment plans", restricted: false },
+  { id: "silent", name: "# 🔕-silent-room", label: "Silent Room", description: "Off-the-record logs, no push notifications", restricted: false }
 ];
 
 // Optimized canvas compressor to keep standard base64 strings small (sub 40KB) for Firebase Spark standard documents
@@ -589,6 +591,14 @@ export default function WarRoomSection({
           }
         });
 
+        sendPushNotification({
+          title: `🔍 Roster lookup inside #${activeRoom}`,
+          message: `${userName} analyzed player @${matched.playerName}`,
+          linkToTab: "war",
+          room: activeRoom,
+          excludeUserUid: userUid
+        });
+
         setInputText("");
       } catch (err) {
         handleFirestoreError(err, OperationType.CREATE, "chats");
@@ -616,6 +626,14 @@ export default function WarRoomSection({
         pinned: false,
         replyTo: replyContext,
         reactions: {}
+      });
+
+      sendPushNotification({
+        title: `💬 New Message in #${activeRoom}`,
+        message: `${userName}: ${inputText.trim() || "Sent a media attachment"}`,
+        linkToTab: "war",
+        room: activeRoom,
+        excludeUserUid: userUid
       });
 
       setInputText("");
@@ -659,6 +677,14 @@ export default function WarRoomSection({
         isPoll: true,
         pollOptions: validOptions,
         pollVotes: votesMock
+      });
+
+      sendPushNotification({
+        title: `📊 Strategic Poll Deployed in #${activeRoom}`,
+        message: `${userName} launched survey: "${pollQuestion.trim()}"`,
+        linkToTab: "war",
+        room: activeRoom,
+        excludeUserUid: userUid
       });
 
       setPollQuestion("");

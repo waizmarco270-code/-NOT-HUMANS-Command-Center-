@@ -3,6 +3,7 @@ import { collection, onSnapshot, query, orderBy, addDoc, serverTimestamp, delete
 import { db, handleFirestoreError, OperationType } from "../firebase";
 import { Announcement, CoCRole } from "../types";
 import { Megaphone, Pin, Star, Trash2, Calendar, Send, ShieldAlert } from "lucide-react";
+import { sendPushNotification } from "../pushHelper";
 
 interface AnnouncementSectionProps {
   userUid: string | null;
@@ -102,6 +103,14 @@ export default function AnnouncementSection({ userUid, userName, cocRole }: Anno
         pinned: isPinned,
         createdAt: serverTimestamp(),
       });
+
+      sendPushNotification({
+        title: "📢 New Announcement Posted",
+        message: `${userName}: "${title.trim()}"`,
+        linkToTab: "announcements",
+        excludeUserUid: userUid || undefined
+      });
+
       setTitle("");
       setContent("");
       setIsPinned(false);
