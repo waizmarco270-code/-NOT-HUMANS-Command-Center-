@@ -224,7 +224,7 @@ export default function Header({
               </button>
 
               {showNotifDropdown && (
-                <div className="absolute right-0 mt-2.5 w-80 sm:w-96 bg-[#0a0505] border border-red-900/40 rounded-xl shadow-[0_10px_35px_rgba(0,0,0,0.95)] p-4 text-zinc-100 font-sans max-h-[480px] overflow-y-auto scrollbar-thin z-[9999] pointer-events-auto">
+                <div className="fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-[72px] sm:top-auto sm:mt-2.5 w-auto sm:w-96 bg-[#0a0505] border border-red-900/40 rounded-xl shadow-[0_10px_35px_rgba(0,0,0,0.95)] p-4 text-zinc-100 font-sans max-h-[480px] overflow-y-auto scrollbar-thin z-[9999] pointer-events-auto">
                   <div className="flex items-center justify-between border-b border-[#2b1616] pb-2 mb-3 select-none">
                     <div className="flex items-center space-x-2">
                       <span className="text-red-500 animate-pulse">📡</span>

@@ -1298,51 +1298,91 @@ export default function WarRoomSection({
                 <span className="text-[10px] text-zinc-450">Comrade, there are no transmissions matching this search block.</span>
               </div>
             ) : (
-              filteredMessages.map((msg) => {
-                const belongsToMe = msg.authorUid === userUid;
-                const hasReplied = !!msg.replyTo;
-                
-                // Determine user roles
-                const isLeader = msg.authorRole === "Leader" || msg.authorRole === "Leader / Emperor";
-                const isCoLeader = msg.authorRole === "Co-Leader" || msg.authorRole === "Co-Leader / General";
-                const isSupremeOfficial = msg.authorTag?.toUpperCase().trim() === "#PV9GPQPUC" || msg.authorRole?.toLowerCase().includes("emperor");
-                const isGeneralOfficer = isLeader || isCoLeader;
-                const isElderRole = msg.authorRole === "Elder" || msg.authorRole === "Elder / Commander";
+              (() => {
+                let lastDateStr = "";
+                return filteredMessages.map((msg) => {
+                  const belongsToMe = msg.authorUid === userUid;
+                  const hasReplied = !!msg.replyTo;
 
-                // Resolve border & styles strictly based on CoC Role as requested by Master
-                let borderTheme = "border-zinc-200 bg-white text-zinc-900 shadow-sm hover:border-zinc-300";
-                let badgeRoleColor = "bg-zinc-100 text-zinc-650 border border-zinc-200 font-semibold";
-                
-                if (msg.isDeleted) {
-                  borderTheme = "border-red-300 bg-red-50/30 text-stone-400 opacity-60 border-dashed shadow-inner";
-                  badgeRoleColor = "bg-red-50 text-red-700 border border-red-200 font-mono font-bold text-[7.5px]";
-                } else if (msg.pinned) {
-                  // Master's Premium static blue border with glowing shadow elements (No pulse animation as requested)
-                  borderTheme = "border-blue-400 bg-gradient-to-tr from-blue-50/40 via-white to-indigo-50/30 text-zinc-950 shadow-[0_4px_14px_rgba(59,130,246,0.22)] ring-1 ring-blue-300/50 hover:border-blue-500";
-                  badgeRoleColor = "bg-blue-600 text-white border-blue-400 border font-black text-[8px]";
-                } else if (isSupremeOfficial) {
-                  borderTheme = "border-amber-300 bg-amber-50/95 text-amber-950 shadow-[0_2px_8px_rgba(245,158,11,0.06)] hover:border-amber-400";
-                  badgeRoleColor = "bg-amber-100 text-amber-800 border-amber-200 border font-black";
-                } else if (isGeneralOfficer) {
-                  borderTheme = "border-red-200 bg-red-50/90 text-stone-900 shadow-[0_2px_8px_rgba(239,68,68,0.06)] hover:border-red-350";
-                  badgeRoleColor = "bg-red-100 text-red-700 border-red-200 border font-black";
-                } else if (isElderRole) {
-                  borderTheme = "border-cyan-200 bg-cyan-50/90 text-cyan-955 shadow-[0_2px_8px_rgba(6,182,212,0.05)] hover:border-cyan-300";
-                  badgeRoleColor = "bg-cyan-100 text-cyan-705 border border-cyan-200 border font-extrabold";
-                }
+                  const msgDate = (() => {
+                    const t = msg.createdAt;
+                    if (!t) return new Date();
+                    if (typeof t.toDate === "function") return t.toDate();
+                    if (t.seconds) return new Date(t.seconds * 1000);
+                    return new Date(t);
+                  })();
 
-                // Look up any custom battle logo from the parent's synchronized roster list
-                const matchedMember = allMembers.find(
-                  m => m.playerTag?.toUpperCase().trim() === msg.authorTag?.toUpperCase().trim() || m.uid === msg.authorUid
-                );
+                  const getDayLabel = (date: Date) => {
+                    const today = new Date();
+                    const yesterday = new Date();
+                    yesterday.setDate(today.getDate() - 1);
+                    if (date.toDateString() === today.toDateString()) return "TODAY";
+                    if (date.toDateString() === yesterday.toDateString()) return "YESTERDAY";
+                    return date.toLocaleDateString(undefined, {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric"
+                    }).toUpperCase();
+                  };
 
-                return (
-                  <div
-                    key={msg.id}
-                    className={`flex flex-col max-w-[85%] md:max-w-[72%] group ${
-                      belongsToMe ? "ml-auto items-end" : "mr-auto items-start"
-                    }`}
-                  >
+                  const currentDayLabel = getDayLabel(msgDate);
+                  const showDivider = currentDayLabel !== lastDateStr;
+                  if (showDivider) {
+                    lastDateStr = currentDayLabel;
+                  }
+                  
+                  // Determine user roles
+                  const isLeader = msg.authorRole === "Leader" || msg.authorRole === "Leader / Emperor";
+                  const isCoLeader = msg.authorRole === "Co-Leader" || msg.authorRole === "Co-Leader / General";
+                  const isSupremeOfficial = msg.authorTag?.toUpperCase().trim() === "#PV9GPQPUC" || msg.authorRole?.toLowerCase().includes("emperor");
+                  const isGeneralOfficer = isLeader || isCoLeader;
+                  const isElderRole = msg.authorRole === "Elder" || msg.authorRole === "Elder / Commander";
+
+                  // Resolve border & styles strictly based on CoC Role as requested by Master
+                  let borderTheme = "border-zinc-200 bg-white text-zinc-900 shadow-sm hover:border-zinc-300";
+                  let badgeRoleColor = "bg-zinc-100 text-zinc-650 border border-zinc-200 font-semibold";
+                  
+                  if (msg.isDeleted) {
+                    borderTheme = "border-red-300 bg-red-50/30 text-stone-400 opacity-60 border-dashed shadow-inner";
+                    badgeRoleColor = "bg-red-50 text-red-700 border border-red-200 font-mono font-bold text-[7.5px]";
+                  } else if (msg.pinned) {
+                    // Master's Premium static blue border with glowing shadow elements (No pulse animation as requested)
+                    borderTheme = "border-blue-400 bg-gradient-to-tr from-blue-50/40 via-white to-indigo-50/30 text-zinc-950 shadow-[0_4px_14px_rgba(59,130,246,0.22)] ring-1 ring-blue-300/50 hover:border-blue-500";
+                    badgeRoleColor = "bg-blue-600 text-white border-blue-400 border font-black text-[8px]";
+                  } else if (isSupremeOfficial) {
+                    borderTheme = "border-amber-300 bg-amber-50/95 text-amber-950 shadow-[0_2px_8px_rgba(245,158,11,0.06)] hover:border-amber-400";
+                    badgeRoleColor = "bg-amber-100 text-amber-800 border-amber-200 border font-black";
+                  } else if (isGeneralOfficer) {
+                    borderTheme = "border-red-200 bg-red-50/90 text-stone-900 shadow-[0_2px_8px_rgba(239,68,68,0.06)] hover:border-red-350";
+                    badgeRoleColor = "bg-red-100 text-red-700 border-red-200 border font-black";
+                  } else if (isElderRole) {
+                    borderTheme = "border-cyan-200 bg-cyan-50/90 text-cyan-955 shadow-[0_2px_8px_rgba(6,182,212,0.05)] hover:border-cyan-300";
+                    badgeRoleColor = "bg-cyan-100 text-cyan-705 border border-cyan-200 border font-extrabold";
+                  }
+
+                  // Look up any custom battle logo from the parent's synchronized roster list
+                  const matchedMember = allMembers.find(
+                    m => m.playerTag?.toUpperCase().trim() === msg.authorTag?.toUpperCase().trim() || m.uid === msg.authorUid
+                  );
+
+                  return (
+                    <React.Fragment key={msg.id}>
+                      {showDivider && (
+                        <div className="w-full flex items-center justify-center my-4 pr-1 select-none col-span-full">
+                          <div className="h-[1px] bg-zinc-200 grow" />
+                          <div className="mx-4 px-3.5 py-1 bg-[#fff] border border-zinc-200 rounded-full text-[9px] font-mono font-black text-zinc-500 shadow-[0_1px_3px_rgba(0,0,0,0.05)] whitespace-nowrap uppercase tracking-widest flex items-center gap-1">
+                            🗓️ {currentDayLabel}
+                          </div>
+                          <div className="h-[1px] bg-zinc-200 grow" />
+                        </div>
+                      )}
+
+                      <div
+                        className={`flex flex-col max-w-[85%] md:max-w-[72%] group ${
+                          belongsToMe ? "ml-auto items-end" : "mr-auto items-start"
+                        }`}
+                      >
                     {/* Sender Meta and Avatar section */}
                     <div className="flex items-center space-x-2.5 mb-1 flex-wrap">
                       
@@ -1633,6 +1673,22 @@ export default function WarRoomSection({
                         </div>
                       )}
 
+                      {/* WhatsApp-Style Timestamp & Read-Receipt Indicator */}
+                      {!msg.isDeleted && (
+                        <div className="text-[8.5px] font-mono text-zinc-400 mt-2 select-none flex items-center justify-end gap-1 leading-none pt-0.5 border-t border-zinc-100/40">
+                          <span className="opacity-80">
+                            {msgDate.toLocaleTimeString(undefined, {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: true
+                            })}
+                          </span>
+                          {belongsToMe && (
+                            <span className="text-blue-500 font-sans text-[9px] font-black tracking-tighter" title="Delivered & Synced to database">✓✓</span>
+                          )}
+                        </div>
+                      )}
+
                     </div>
 
                     {/* Compact Active Emoji Reactions (Tapping on existing ones increments/toggles them) */}
@@ -1664,9 +1720,10 @@ export default function WarRoomSection({
                       </div>
                     )}
                   </div>
+                </React.Fragment>
                 );
-              })
-            )}
+              });
+            })())}
             
             {/* Direct reference target anchor */}
             <div ref={messagesEndRef} />

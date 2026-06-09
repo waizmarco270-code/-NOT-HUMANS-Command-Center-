@@ -139,6 +139,28 @@ export async function getPushStatus(userUid: string | null): Promise<PushStatus>
     const isSubscribed = !!(OneSignal.User?.pushSubscription?.id);
     const optedIn = OneSignal.User?.pushSubscription?.optedIn === true;
 
+    // Self-healing auto-optIn: if browser allowed permissions, but OneSignal shows offline/opted out, automatically force opt-in!
+    if (!isSubscribed && !optedIn) {
+      console.log("⚡ [OneSignal Auto-Recovery] Browser permissions allowed, but SDK status is offline/logged-out. Auto opting in...");
+      await OneSignal.User?.pushSubscription?.optIn().catch((optErr: any) => {
+        console.warn("OneSignal optIn fallback failed:", optErr);
+      });
+      // Small delay loop to try to capture the subscription ID straight away
+      for (let i = 0; i < 4; i++) {
+        const checkSub = !!(OneSignal.User?.pushSubscription?.id);
+        const checkOpt = OneSignal.User?.pushSubscription?.optedIn === true;
+        if (checkSub || checkOpt) {
+          return {
+            supported: true,
+            permission,
+            subscribed: true,
+            loading: false
+          };
+        }
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    }
+
     return {
       supported: true,
       permission,
@@ -180,6 +202,18 @@ export async function subscribeToPushNotifications(userUid: string): Promise<boo
       } catch (optErr) {
         console.warn("Attempted optIn fallback error:", optErr);
       }
+    }
+
+    console.log("🔥 [OneSignal Handshake] Force validation polling start...");
+    // Poll up to 10 rounds (5 seconds) to guarantee the background registration has updated on the active SDK instance before wrapping up
+    for (let i = 0; i < 10; i++) {
+      const activeId = OneSignal.User?.pushSubscription?.id;
+      const optedIn = OneSignal.User?.pushSubscription?.optedIn === true;
+      if (activeId || optedIn) {
+        console.log(`🔥 [OneSignal Handshake] Verified live active session! Subscriber: ${activeId}`);
+        break;
+      }
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
 
     console.log("🔥 [OneSignal] Channel subscribed successfully under userUid:", userUid);

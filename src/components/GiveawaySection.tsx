@@ -3,6 +3,7 @@ import { collection, onSnapshot, query, orderBy, addDoc, serverTimestamp, update
 import { db, handleFirestoreError, OperationType } from "../firebase";
 import { Giveaway, CoCRole, Member } from "../types";
 import { Gift, Award, Plus, Trash2, CheckCircle2, User, HelpCircle, Loader, Shuffle } from "lucide-react";
+import { sendPushNotification } from "../pushHelper";
 
 interface GiveawaySectionProps {
   userUid: string;
@@ -114,24 +115,31 @@ export default function GiveawaySection({ userUid, userName, cocRole, members }:
     if (!title.trim()) return;
 
     try {
-      const endsAtDate = new Date();
-      endsAtDate.setDate(endsAtDate.getDate() + endsInDays);
+       const endsAtDate = new Date();
+       endsAtDate.setDate(endsAtDate.getDate() + endsInDays);
 
-      await addDoc(collection(db, "giveaways"), {
-        title: title.trim(),
-        prize,
-        description: description.trim(),
-        createdAt: serverTimestamp(),
-        endsAt: endsAtDate.toISOString(),
-        status: "active"
-      });
+       await addDoc(collection(db, "giveaways"), {
+         title: title.trim(),
+         prize,
+         description: description.trim(),
+         createdAt: serverTimestamp(),
+         endsAt: endsAtDate.toISOString(),
+         status: "active"
+       });
 
-      setTitle("");
-      setPrize("Gold Pass");
-      setDescription("");
-      setShowForm(false);
+       sendPushNotification({
+         title: "🎁 New Loot Giveaway active!",
+         message: `Master ${userName} posted giveaway: "${title.trim()}" for ${prize}! Join now in Giveaways tab!`,
+         linkToTab: "giveaway",
+         excludeUserUid: userUid
+       }).catch(err => console.warn("Failed sending push alert for giveaway:", err));
+
+       setTitle("");
+       setPrize("Gold Pass");
+       setDescription("");
+       setShowForm(false);
     } catch (err) {
-      handleFirestoreError(err, OperationType.CREATE, "giveaways");
+       handleFirestoreError(err, OperationType.CREATE, "giveaways");
     }
   };
 

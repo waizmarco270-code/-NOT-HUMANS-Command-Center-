@@ -3,6 +3,7 @@ import { doc, getDoc, setDoc, onSnapshot, collection } from "firebase/firestore"
 import { db, handleFirestoreError, OperationType } from "../firebase";
 import { CWLPlan, CoCRole, Assignment, Member } from "../types";
 import { Award, Target, Save, AlertTriangle, CheckCircle, Shield, Edit3, Plus, Trophy, MessageSquare } from "lucide-react";
+import { sendPushNotification } from "../pushHelper";
 
 interface CwlSectionProps {
   userUid: string | null;
@@ -94,8 +95,9 @@ export default function CwlSection({ userUid, userName, cocRole, members }: CwlS
     if (!cwlPlan) return;
     const planId = `cwl_day_${selectedDay}`;
     try {
+      const opp = opponentName.trim() || "Enemy Clan";
       await setDoc(doc(db, "cwl_plans", planId), {
-        opponentName: opponentName.trim() || "Enemy Clan",
+        opponentName: opp,
         warDay: selectedDay,
         assignments: updatedAssignments || cwlPlan.assignments,
         leaderNotes: leaderNotes.trim(),
@@ -103,6 +105,14 @@ export default function CwlSection({ userUid, userName, cocRole, members }: CwlS
         updatedBy: userName,
         updatedAt: new Date().toISOString(),
       });
+
+      sendPushNotification({
+        title: `🏆 CWL Day ${selectedDay} strategy deployed!`,
+        message: `CoC general ${userName} modified targets against ${opp}. Check your mirror and assignments, warrior!`,
+        linkToTab: "cwl",
+        excludeUserUid: userUid
+      }).catch(err => console.warn("Failed sending push alert for CWL:", err));
+
       alert(`CWL War Day ${selectedDay} strategy program saved successfully.`);
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, `cwl_plans/${planId}`);
