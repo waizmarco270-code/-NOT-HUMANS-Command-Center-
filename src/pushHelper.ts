@@ -1,23 +1,7 @@
 /**
- * Sovereign Web Push notification registration helper
- * Communicates with backend VAPID broker to register subscribers automatically.
+ * Sovereign OneSignal Push Notification helper
+ * Handles dynamic integration with OneSignal's reliable messaging channels.
  */
-
-// Convert URL-safe base64 string to Uint8Array for VAPID key
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding)
-    .replace(/\-/g, "+")
-    .replace(/_/g, "/");
-
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-}
 
 export interface PushStatus {
   supported: boolean;
@@ -26,11 +10,40 @@ export interface PushStatus {
   loading: boolean;
 }
 
+let scriptLoadedPromise: Promise<void> | null = null;
+
+function loadOneSignalScript(): Promise<void> {
+  if (scriptLoadedPromise) return scriptLoadedPromise;
+  
+  scriptLoadedPromise = new Promise((resolve) => {
+    if (typeof window === "undefined") {
+      resolve();
+      return;
+    }
+    
+    if ((window as any).OneSignal) {
+      resolve();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
+    script.defer = true;
+    script.onload = () => resolve();
+    script.onerror = () => {
+      console.warn("⚠️ Failed to load OneSignal CDN SDK script on this device.");
+      resolve();
+    };
+    document.head.appendChild(script);
+  });
+  
+  return scriptLoadedPromise;
+}
+
 export async function checkPushSupport(): Promise<boolean> {
   return (
     typeof window !== "undefined" &&
     "serviceWorker" in navigator &&
-    "PushManager" in window &&
     "Notification" in window
   );
 }
@@ -47,16 +60,21 @@ export async function getPushStatus(userUid: string | null): Promise<PushStatus>
   }
 
   try {
-    const registration = await navigator.serviceWorker.ready;
-    const subscription = await registration.pushManager.getSubscription();
+    await loadOneSignalScript();
+    const OneSignal = (window as any).OneSignal;
+    if (!OneSignal) {
+      return { supported: true, permission, subscribed: false, loading: false };
+    }
+
+    const isSubscribed = OneSignal.User?.pushSubscription?.id ? true : false;
     return {
       supported: true,
       permission,
-      subscribed: !!subscription,
+      subscribed: isSubscribed,
       loading: false
     };
   } catch (err) {
-    console.error("Error checking push subscription:", err);
+    console.warn("OneSignal status check fallback:", err);
     return { supported: true, permission, subscribed: false, loading: false };
   }
 }
@@ -69,53 +87,44 @@ export async function subscribeToPushNotifications(userUid: string): Promise<boo
   }
 
   try {
-    // 1. Fetch dynamic public VAPID key from backend
-    const configRes = await fetch("/api/push/config");
-    if (!configRes.ok) {
-      throw new Error(`Failed to fetch push configurations: ${configRes.status}`);
-    }
-    const { publicKey } = await configRes.json();
-    if (!publicKey) {
-      throw new Error("No active public VAPID key received from server.");
+    await loadOneSignalScript();
+    const OneSignal = (window as any).OneSignal;
+    if (!OneSignal) {
+      throw new Error("OneSignal SDK failed to load.");
     }
 
-    // 2. Request notification permissions from user
-    const permission = await Notification.requestPermission();
-    if (permission !== "granted") {
-      console.warn("Notification permissions denied by user.");
+    const appId = (import.meta as any).env.VITE_ONESIGNAL_APP_ID;
+    if (!appId) {
+      throw new Error("VITE_ONESIGNAL_APP_ID is not set in environment.");
+    }
+
+    // Call init first if not done
+    await OneSignal.init({
+      appId: appId,
+      allowLocalhostAsSecureOrigin: true,
+      notifyButton: {
+        enable: false,
+      },
+    });
+
+    if (userUid) {
+      await OneSignal.login(userUid);
+      console.log(`🔥 [OneSignal] Logged in user: ${userUid}`);
+    }
+
+    // Modern v16 requestPermission
+    await OneSignal.Notifications.requestPermission();
+    
+    // Check if permission is now granted
+    if (Notification.permission !== "granted") {
+      console.warn("Permission was not granted by the user.");
       return false;
     }
 
-    // 3. Register or get current ready service worker
-    const registration = await navigator.serviceWorker.ready;
-
-    // 4. Register subscription
-    const applicationServerKey = urlBase64ToUint8Array(publicKey);
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey
-    });
-
-    // 5. Submit subscription to backend coordinator
-    const subscribeRes = await fetch("/api/push/subscribe", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        userUid,
-        subscription
-      })
-    });
-
-    if (!subscribeRes.ok) {
-      throw new Error("Failed to post push subscription details to backend coordinate broker.");
-    }
-
-    console.log("🔥 [Web Push] Subscriber registered successfully.");
+    console.log("🔥 [OneSignal] Channel subscribed successfully under userUid:", userUid);
     return true;
   } catch (err) {
-    console.error("Failed to configure push notification subscription:", err);
+    console.error("Failed to subscribe in OneSignal:", err);
     return false;
   }
 }

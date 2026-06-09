@@ -5,7 +5,6 @@ import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { HttpsProxyAgent } from "https-proxy-agent";
 import https from "https";
-import webpush from "web-push";
 import clanData from "./clanData.json";
 
 // Import Firebase core capabilities for serverless database preservation
@@ -986,271 +985,84 @@ app.post("/api/verify-token", async (req, res) => {
   }
 });
 
-// --- WEB PUSH LOGIC AND CONFIGURATIONS (Sovereign Notification Suite) ---
-// Default user specified public key
-const DEFAULT_VAPID_PUBLIC_KEY = "BPiuU0uS-HwKNyXmj6atyzhXmcRn3AHhcGyT_FF2stg-W9bUQTS4Bhb6PUwasUp2MxM0x2Cu9mWFEohIPwiPxAk";
-
-let vapidPublicKey = process.env.VAPID_PUBLIC_KEY || "";
-let vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || "";
-
-const CONFIG_PATH = path.join(process.env.VERCEL ? "/tmp" : process.cwd(), "push_config.json");
-const SUB_PATH = path.join(process.env.VERCEL ? "/tmp" : process.cwd(), "push_subscriptions.json");
-
-// Local fallback routines
-function readLocalSubscriptions(): Record<string, any[]> {
-  if (fs.existsSync(SUB_PATH)) {
-    try {
-      return JSON.parse(fs.readFileSync(SUB_PATH, "utf-8"));
-    } catch {
-      return {};
-    }
-  }
-  return {};
-}
-
-function saveLocalSubscription(userUid: string, subscription: any) {
-  const subs = readLocalSubscriptions();
-  if (!subs[userUid]) {
-    subs[userUid] = [];
-  }
-  const alreadyExists = subs[userUid].some((s: any) => s.endpoint === subscription.endpoint);
-  if (!alreadyExists) {
-    subs[userUid].push(subscription);
-    try {
-      fs.writeFileSync(SUB_PATH, JSON.stringify(subs, null, 2));
-    } catch (err) {
-      console.warn("⚠️ Local write error:", err);
-    }
-  }
-}
-
-// Unified Firestore + JSON File subscription states
-async function saveSubscription(userUid: string, subscription: any) {
-  if (serverDb) {
-    try {
-      const safeId = Buffer.from(subscription.endpoint).toString("base64").replace(/=/g, "").replace(/\//g, "_").replace(/\+/g, "-");
-      const docRef = fDoc(serverDb, "push_subscriptions", safeId);
-      await fSetDoc(docRef, {
-        userUid,
-        subscription,
-        endpoint: subscription.endpoint,
-        updatedAt: new Date().toISOString()
-      });
-      console.log(`🔥 [Server Firestore] Push channel synced in database for Master's warrior: ${userUid}`);
-      return;
-    } catch (err) {
-      console.error("❌ Firestore subscription save failed, resorting to local fallback:", err);
-    }
-  }
-  saveLocalSubscription(userUid, subscription);
-}
-
-async function removeSubscription(endpoint: string) {
-  if (serverDb) {
-    try {
-      const safeId = Buffer.from(endpoint).toString("base64").replace(/=/g, "").replace(/\//g, "_").replace(/\+/g, "-");
-      const docRef = fDoc(serverDb, "push_subscriptions", safeId);
-      await fDeleteDoc(docRef);
-      console.log(`🔥 [Server Firestore] Purged dead push document: ${safeId}`);
-    } catch (err) {
-      console.error("❌ Failed to purge Firestore subscription document:", err);
-    }
-  }
-
-  const subs = readLocalSubscriptions();
-  let changed = false;
-  for (const uid in subs) {
-    const originalLength = subs[uid].length;
-    subs[uid] = subs[uid].filter((s: any) => s.endpoint !== endpoint);
-    if (subs[uid].length !== originalLength) {
-      changed = true;
-    }
-    if (subs[uid].length === 0) {
-      delete subs[uid];
-    }
-  }
-  if (changed) {
-    try {
-      fs.writeFileSync(SUB_PATH, JSON.stringify(subs, null, 2));
-    } catch (err) {
-      console.warn("⚠️ Local write error during purge:", err);
-    }
-  }
-}
-
-async function getActiveSubscriptions(): Promise<Record<string, any[]>> {
-  const allSubs: Record<string, any[]> = {};
-  if (serverDb) {
-    try {
-      const q = fQuery(fCollection(serverDb, "push_subscriptions"));
-      const snapshot = await fGetDocs(q);
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        if (data && data.userUid && data.subscription) {
-          if (!allSubs[data.userUid]) {
-            allSubs[data.userUid] = [];
-          }
-          allSubs[data.userUid].push(data.subscription);
-        }
-      });
-      
-      const local = readLocalSubscriptions();
-      for (const uid in local) {
-        if (!allSubs[uid]) {
-          allSubs[uid] = [];
-        }
-        local[uid].forEach((lSub) => {
-          const exists = allSubs[uid].some((s: any) => s.endpoint === lSub.endpoint);
-          if (!exists) {
-            allSubs[uid].push(lSub);
-          }
-        });
-      }
-      return allSubs;
-    } catch (err) {
-      console.error("❌ Firestore read failed, using local fallback only:", err);
-    }
-  }
-  return readLocalSubscriptions();
-}
-
-// API Endpoints for push notifications
+// --- ONESIGNAL PUSH LOGIC AND CONFIGURATIONS (Sovereign Notification Suite) ---
+// We transition fully to OneSignal as requested by Master.
 app.get("/api/push/config", (req, res) => {
-  return res.json({ publicKey: vapidPublicKey || DEFAULT_VAPID_PUBLIC_KEY });
+  return res.json({ 
+    success: true, 
+    oneSignalAppId: process.env.VITE_ONESIGNAL_APP_ID || "Not Configured" 
+  });
 });
 
 app.post("/api/push/subscribe", async (req, res) => {
-  const { userUid, subscription } = req.body;
-  if (!userUid || !subscription) {
-    return res.status(400).json({ error: "Missing userUid or subscription body, Master." });
-  }
-  try {
-    await saveSubscription(userUid, subscription);
-    return res.json({ success: true, message: "Subscription configured successfully." });
-  } catch (err: any) {
-    console.error("Subscription endpoint failed:", err);
-    return res.status(500).json({ error: "Failed to persist subscription: " + err.message });
-  }
+  // OneSignal handles subscriber persistence automatically on their server.
+  // We keep this route for potential sync or background logging.
+  const { userUid } = req.body;
+  console.log(`📡 [OneSignal Sync] App client synced user registration for UID: ${userUid}`);
+  return res.json({ success: true, message: "Subscription verified on OneSignal client." });
 });
 
 app.post("/api/push/send", async (req, res) => {
   const { title, message, linkToTab, room, excludeUserUid } = req.body;
 
   if (room === "silent") {
-    console.log("🔕 [Web Push] Skipped sending notification because the event belongs to silent room.");
+    console.log("🔕 [OneSignal] Skipped sending notification because the event belongs to silent room.");
     return res.json({ success: true, message: "Notification skipped for silent room." });
   }
 
-  try {
-    const subs = await getActiveSubscriptions();
-    const payload = JSON.stringify({
-      title: title || "NOT HUMANS Command Center",
-      body: message || "New tactical payload delivered.",
-      data: {
-        url: linkToTab ? `/?tab=${linkToTab}` : "/"
-      }
+  const onesignalAppId = process.env.VITE_ONESIGNAL_APP_ID;
+  const onesignalApiKey = process.env.ONESIGNAL_API_KEY;
+
+  if (!onesignalAppId || !onesignalApiKey) {
+    console.warn("⚠️ OneSignal configurations are missing in environment variables. Skipped sending push notification.");
+    return res.status(400).json({ 
+      error: "OneSignal API key or App ID is not configured on the server, Master.", 
+      howToFix: "Please add VITE_ONESIGNAL_APP_ID and ONESIGNAL_API_KEY in your env settings." 
     });
+  }
 
-    const sendPromises: Promise<any>[] = [];
+  try {
+    const payload: any = {
+      app_id: onesignalAppId,
+      headings: { en: title || "NOT HUMANS Command Center" },
+      contents: { en: message || "New tactical payload delivered." },
+      url: linkToTab ? `/?tab=${linkToTab}` : "/"
+    };
 
-    for (const uid in subs) {
-      if (excludeUserUid && uid === excludeUserUid) {
-        continue; // Skip the message author
-      }
-
-      subs[uid].forEach((sub: any) => {
-        const p = webpush.sendNotification(sub, payload)
-          .catch((err: any) => {
-            console.error(`Error delivering push to ${uid}:`, err.message);
-            if (err.statusCode === 410 || err.statusCode === 404) {
-              removeSubscription(sub.endpoint);
-            }
-          });
-        sendPromises.push(p);
-      });
+    // If there is an excludeUserUid, we exclude them using filter
+    if (excludeUserUid) {
+      payload.filters = [
+        { field: "external_user_id", operator: "!=", value: excludeUserUid }
+      ];
+    } else {
+      payload.included_segments = ["Subscribed Users"];
     }
 
-    await Promise.all(sendPromises);
-    return res.json({ success: true, subscribersNotified: sendPromises.length });
+    const response = await fetch("https://onesignal.com/api/v1/notifications", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": `Basic ${onesignalApiKey}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const responseData: any = await response.json();
+    if (!response.ok) {
+      console.error("❌ OneSignal API error response:", responseData);
+      return res.status(response.status).json({ success: false, error: responseData });
+    }
+
+    console.log(`📡 [OneSignal] Delivery successful! Notification ID: ${responseData.id}`);
+    return res.json({ success: true, response: responseData });
   } catch (err: any) {
-    console.error("Failed executing notification broadcasting broker:", err);
-    return res.status(500).json({ error: err.message });
+    console.error("Failed sending notification via OneSignal:", err.message);
+    return res.status(500).json({ error: "Failed delivering via OneSignal: " + err.message });
   }
 });
 
 // Configure Vite and static assets
 async function startServer() {
-  // Retrieve or generate persistent VAPID keys using Firestore (enabling true Serverless stability)
-  if (!vapidPublicKey || !vapidPrivateKey) {
-    if (serverDb) {
-      try {
-        const configDocRef = fDoc(serverDb, "system_config", "webpipe_push_config");
-        const docSnap = await fGetDoc(configDocRef);
-        if (docSnap.exists()) {
-          const configData = docSnap.data();
-          vapidPublicKey = configData.publicKey;
-          vapidPrivateKey = configData.privateKey;
-          console.log("🔥 [Server Firestore] Shared VAPID keys fetched from database successfully!");
-        } else {
-          const keys = webpush.generateVAPIDKeys();
-          vapidPublicKey = keys.publicKey;
-          vapidPrivateKey = keys.privateKey;
-          await fSetDoc(configDocRef, {
-            publicKey: vapidPublicKey,
-            privateKey: vapidPrivateKey,
-            generatedAt: new Date().toISOString()
-          });
-          console.log("🔥 [Server Firestore] Generated and saved a new shared VAPID key pair inside Firestore!");
-        }
-      } catch (err) {
-        console.error("❌ Firestore VAPID key exchange failed, falling back to local files:", err);
-      }
-    }
-
-    // Standard file-based fallback if Firestore-based keys could not be resolved
-    if (!vapidPublicKey || !vapidPrivateKey) {
-      if (fs.existsSync(CONFIG_PATH)) {
-        try {
-          const config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8"));
-          vapidPublicKey = config.publicKey;
-          vapidPrivateKey = config.privateKey;
-        } catch (e) {
-          console.error("Failed to read public/private push configurations from file:", e);
-        }
-      }
-    }
-
-    if (!vapidPublicKey || !vapidPrivateKey) {
-      try {
-        const keys = webpush.generateVAPIDKeys();
-        vapidPublicKey = keys.publicKey;
-        vapidPrivateKey = keys.privateKey;
-        try {
-          fs.writeFileSync(CONFIG_PATH, JSON.stringify({ publicKey: vapidPublicKey, privateKey: vapidPrivateKey }, null, 2));
-          console.log("🔥 [Web Push Fallback] Generated and written VAPID keys on local fallback.");
-        } catch (writeErr) {
-          console.warn("⚠️ Could not write configurations to local path:", writeErr);
-        }
-      } catch (err) {
-        console.error("Failed to generate fallback VAPID keys in startServer:", err);
-      }
-    }
-  }
-
-  // Ensure VAPID configurations are armed
-  if (vapidPublicKey && vapidPrivateKey) {
-    try {
-      webpush.setVapidDetails(
-        "mailto:hq@nothumans.com",
-        vapidPublicKey,
-        vapidPrivateKey
-      );
-      console.log("🚀 [Web Push Engine] VAPID details initialized successfully. Active Public Key:", vapidPublicKey);
-    } catch (err: any) {
-      console.error("Failed to initialize VAPID details on startup:", err.message);
-    }
-  }
-
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
