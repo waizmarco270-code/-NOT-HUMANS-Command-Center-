@@ -89,6 +89,8 @@ export async function initOneSignal(userUid?: string | null): Promise<any> {
         notifyButton: {
           enable: false,
         },
+        serviceWorkerPath: "sw.js",
+        serviceWorkerParam: { scope: "/" }
       });
 
       console.log("🔥 [OneSignal SDK] Ready with App ID:", appId);
@@ -104,6 +106,16 @@ export async function initOneSignal(userUid?: string | null): Promise<any> {
       if (userUid) {
         await OneSignal.login(userUid);
         console.log(`🔥 [OneSignal User Logged] Session key: ${userUid}`);
+        
+        // Dynamic zero-config client tagging for targeting and sender exclusion
+        try {
+          if (OneSignal.User && typeof OneSignal.User.addTag === "function") {
+            await OneSignal.User.addTag("userUid", userUid);
+            console.log(`🔥 [OneSignal Tagged] Synced userUid tag on login: ${userUid}`);
+          }
+        } catch (tagErr) {
+          console.warn("OneSignal tag mapping failed:", tagErr);
+        }
       }
 
       return OneSignal;
@@ -202,6 +214,16 @@ export async function subscribeToPushNotifications(userUid: string): Promise<boo
         break;
       }
       await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    // Explicit tag replication during handshake sequence to guarantee database targeting sync
+    if (OneSignal.User && typeof OneSignal.User.addTag === "function") {
+      try {
+        await OneSignal.User.addTag("userUid", userUid);
+        console.log(`🔥 [OneSignal Tagged] Dynamic userUid tag attached successfully: ${userUid}`);
+      } catch (tagErr) {
+        console.warn("OneSignal tag attachment bypassed:", tagErr);
+      }
     }
 
     console.log("🔥 [OneSignal] Channel subscribed successfully under userUid:", userUid);

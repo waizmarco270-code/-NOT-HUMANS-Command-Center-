@@ -1026,9 +1026,18 @@ app.post("/api/push/send", async (req, res) => {
       app_id: onesignalAppId,
       headings: { en: title || "NOT HUMANS Command Center" },
       contents: { en: message || "New tactical payload delivered." },
-      url: linkToTab ? `/?tab=${linkToTab}` : "/",
-      included_segments: ["Subscribed Users"]
+      url: linkToTab ? `/?tab=${linkToTab}` : "/"
     };
+
+    if (excludeUserUid) {
+      // Exclude the sender using the tag matching constraint
+      payload.filters = [
+        { field: "tag", key: "userUid", relation: "!=", value: excludeUserUid }
+      ];
+    } else {
+      // Broadcast to everybody on global dispatches (bases, giveaways, announcements)
+      payload.included_segments = ["Subscribed Users"];
+    }
 
     const response = await fetch("https://onesignal.com/api/v1/notifications", {
       method: "POST",

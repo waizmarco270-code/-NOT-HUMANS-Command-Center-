@@ -1,4 +1,6 @@
 // NOT HUMANS Command Center Service Worker with Web Push Notifications
+importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
+
 const CACHE_NAME = 'not-humans-hq-v1';
 const PRE_CACHE_RESOURCES = [
   '/',
